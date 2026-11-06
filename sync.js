@@ -26,7 +26,8 @@ provider.setCustomParameters({ prompt: "select_account" });
 // Réglages propres à chaque appareil (onglet ouvert, filtres, caches) : jamais synchronisés
 const LOCAL_ONLY = new Set(["qg-tab", "mtq-filter", "mtq-sort", "qg-games-filter", "qg-games-sort", "qg-streams-view",
   "qg-live", "qg-backup", "mtq-backup", "qg-sync-meta", "qg-device"]);
-const synced = (k) => typeof k === "string" && /^(mtq-|qg-)/.test(k) && !LOCAL_ONLY.has(k);
+// Seulement des noms de clés connus de forme (mtq-xxx, qg-xxx) : rien d'autre n'est écrit dans le navigateur
+const synced = (k) => typeof k === "string" && /^(mtq|qg)-[a-z0-9-]{1,40}$/.test(k) && !LOCAL_ONLY.has(k);
 const MAX = 900000;   // un document Firestore fait 1 Mo au plus
 
 const read = (k, f) => { try { return JSON.parse(localStorage.getItem(k) || "null") ?? f; } catch (e) { return f; } };
@@ -79,6 +80,8 @@ function pushAll() {
 
 // Une version venue d'un autre appareil : on l'écrit ici ; les pages ouvertes l'apprennent par l'évènement « storage »
 function apply(key, data) {
+  // Document mal formé (valeur qui n'est pas du texte, date absente) : ignoré
+  if (!data || typeof data.t !== "number" || !(data.v == null || (typeof data.v === "string" && data.v.length <= MAX))) return;
   if (data.v == null) localStorage.removeItem(key);
   else localStorage.setItem(key, data.v);
   meta[key] = data.t;
@@ -98,7 +101,7 @@ async function start(user) {
   }
   // La version la plus récente gagne, clé par clé
   for (const [k, c] of Object.entries(cloud)) {
-    if (!synced(k)) continue;
+    if (!synced(k) || typeof c?.t !== "number") continue;
     const mine = meta[k] || 0;
     if (c.t > mine) apply(k, c);
     else if (mine > c.t) push(k);
@@ -154,6 +157,7 @@ async function logout() {
   // On efface les données de cet appareil : elles restent dans ton compte et reviendront à la prochaine connexion
   const keys = [];
   for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (/^(mtq-|qg-)/.test(k) && k !== "qg-device") keys.push(k); }
+  try { sessionStorage.clear(); } catch (e) {}
   keys.forEach((k) => localStorage.removeItem(k));
   location.reload();
 }
@@ -174,7 +178,12 @@ onAuthStateChanged(auth, async (user) => {
   if (me) {
     me.hidden = false;
     me.title = (user.displayName || user.email || "") + " · cliquer pour se déconnecter";
-    me.innerHTML = user.photoURL ? `<img src="${user.photoURL.replace(/"/g, "")}" alt="" referrerpolicy="no-referrer">` : (user.displayName || "?")[0];
+    // Construit sans HTML : la photo n'est acceptée que si c'est une adresse https
+    if (/^https:\/\//.test(user.photoURL || "")) {
+      const img = document.createElement("img");
+      img.alt = ""; img.referrerPolicy = "no-referrer"; img.src = user.photoURL;
+      me.replaceChildren(img);
+    } else me.textContent = (user.displayName || "?")[0];
   }
   await start(user);
   window.qgBootDone?.();

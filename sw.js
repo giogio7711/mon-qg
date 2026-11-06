@@ -1,7 +1,7 @@
 // Mon QG : garde une copie des pages pour que l'appli s'ouvre même sans réseau.
 // Réseau d'abord (pour toujours avoir la dernière version), copie en secours.
-const CACHE = "mon-qg-v1";
-const SHELL = ["index.html", "mangatheque.html", "jeux.html", "streams.html", "sync.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png"];
+const CACHE = "mon-qg-v2";
+const SHELL = ["index.html", "mangatheque.html", "jeux.html", "streams.html", "app.js", "mangatheque.js", "jeux.js", "streams.js", "guard.js", "sync.js","manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -17,7 +17,7 @@ self.addEventListener("fetch", (e) => {
   e.respondWith(
     fetch(e.request)
       .then((res) => {
-        if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); }
+        if (res.ok && res.type === "basic") { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); }
         return res;
       })
       .catch(async () => (await caches.match(e.request, { ignoreSearch: true })) || (e.request.mode === "navigate" ? caches.match("index.html") : undefined))
