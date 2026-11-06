@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mes Jeux</title>
+<script>/* En ligne, cette page s'ouvre dans Mon QG (qui gère la connexion et la synchro) */ if (/^https?:$/.test(location.protocol) && window.top === window.self) location.replace("index.html#jeux");</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Rajdhani:wght@500;600;700&display=swap">
+<style>
+/* Cyberpunk : ville de nuit, jaune électrique, cyan et rouge néon, coins coupés, effet glitch */
+:root {
+  --bg: #08090d; --panel: #10131a; --panel2: #161a24; --text: #e6f7f8; --muted: #7d8b97; --line: #233040;
+  --y: #f3e600; --y-ink: #0a0a0a; --cyan: #00f0ff; --red: #ff003c; --stop: #ff3b5c; --veil: rgba(3, 4, 8, .82);
+  --font-display: "Chakra Petch", "Segoe UI", sans-serif;
+  --font-body: "Rajdhani", "Segoe UI", system-ui, sans-serif;
+  --cut: 14px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { background: var(--bg); }
+body {
+  margin: 0; color: var(--text); font-family: var(--font-body); font-size: 16px; font-weight: 500; line-height: 1.45;
+  background-color: var(--bg);
+  background-image: linear-gradient(rgba(0, 240, 255, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 240, 255, .035) 1px, transparent 1px),
+    radial-gradient(circle at 85% 0%, rgba(255, 0, 60, .14), transparent 40%), radial-gradient(circle at 0% 100%, rgba(0, 240, 255, .10), transparent 45%);
+  background-size: 44px 44px, 44px 44px, auto, auto;
+  background-attachment: fixed;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.wrap { max-width: 1140px; margin: 0 auto; padding-inline: 16px; }
+
+/* En-tête : panneau jaune à coins coupés */
+.cover-wrap { padding-block: 24px 0; }
+.cover { position: relative; background: var(--y); color: var(--y-ink); padding: 24px 28px 22px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px 24px; align-items: center;
+  clip-path: polygon(0 0, calc(100% - 34px) 0, 100% 34px, 100% 100%, 34px 100%, 0 calc(100% - 34px)); }
+.cover::after { content: "SYS://LUDOTHÈQUE_v2.0"; position: absolute; right: 44px; bottom: 8px; font-family: var(--font-display); font-size: 11px; letter-spacing: .2em; opacity: .55; }
+.kana { writing-mode: vertical-rl; font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 3.6vw, 32px); line-height: 1; background: var(--y-ink); color: var(--y); padding: 10px 6px; letter-spacing: .08em; }
+.brand { min-width: 0; }
+.brand h1 { margin: 0; font-family: var(--font-display); font-weight: 700; text-transform: uppercase; font-size: clamp(34px, 7vw, 68px); line-height: .95; letter-spacing: .02em; }
+.brand h1 em { font-style: normal; color: var(--y-ink); text-shadow: 3px 0 0 var(--red), -3px 0 0 var(--cyan); }
+.bubble { display: inline-block; margin-top: 12px; font-family: var(--font-display); font-size: 14px; font-weight: 600; letter-spacing: .04em; background: var(--y-ink); color: var(--y); padding: 4px 12px; }
+.bubble::before { content: "> "; color: var(--cyan); }
+
+.btn { border: 1px solid var(--cyan); background: transparent; border-radius: 0; padding: 8px 16px; font-family: var(--font-display); font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  font-size: 13px; cursor: pointer; line-height: 1.2; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--cyan); position: relative;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); }
+.btn:hover { background: rgba(0, 240, 255, .12); }
+.btn:active { transform: translate(1px, 1px); }
+.btn.primary { background: var(--y); color: var(--y-ink); border-color: var(--y); }
+.btn.primary:hover { background: #fff35a; }
+.cover .btn.primary { background: var(--y-ink); color: var(--y); border-color: var(--y-ink); }
+.cover .btn.primary:hover { background: #1c1c1c; }
+.btn.big { font-size: 16px; padding: 13px 20px; }
+.btn.ghost { border-color: var(--line); color: var(--text); }
+.btn.ghost:hover { border-color: var(--cyan); color: var(--cyan); }
+.btn.danger { border-color: var(--red); color: var(--red); }
+.btn.danger.armed { background: var(--red); color: #fff; }
+.btn:disabled { opacity: .45; cursor: default; }
+
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; padding-block: 24px 4px; }
+.stat { position: relative; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-left: 3px solid var(--cyan); padding: 10px 14px 12px; min-width: 0;
+  display: flex; flex-direction: column; align-items: flex-start; text-align: left; cursor: pointer; border-radius: 0;
+  clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%); }
+.stat:hover { background: var(--panel2); }
+.stat[aria-pressed="true"] { border-color: var(--y); border-left-color: var(--y); box-shadow: inset 0 0 0 1px var(--y); }
+.stat .v { font-family: var(--font-display); font-weight: 700; font-size: 34px; line-height: 1.05; color: var(--cyan); text-shadow: 0 0 12px rgba(0, 240, 255, .45); font-variant-numeric: tabular-nums; }
+.stat .l { font-family: var(--font-display); font-size: 11px; text-transform: uppercase; letter-spacing: .16em; font-weight: 600; color: var(--muted); }
+.stat.hot { background: var(--y); border-color: var(--y); border-left-color: var(--y-ink); }
+.stat.hot .v { color: var(--y-ink); text-shadow: none; }
+.stat.hot .l { color: var(--y-ink); }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding-block: 18px 14px; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab { border: 1px solid var(--line); background: var(--panel); padding: 4px 11px; cursor: pointer; font-family: var(--font-display); font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.tab:hover { border-color: var(--cyan); }
+.tab b { font-weight: 700; font-size: 12px; margin-left: 6px; color: var(--cyan); }
+.tab[aria-pressed="true"] { background: var(--y); color: var(--y-ink); border-color: var(--y); }
+.tab[aria-pressed="true"] b { color: var(--red); }
+.finders { display: flex; flex-wrap: wrap; gap: 8px; }
+.finders input, .finders select { border: 1px solid var(--line); background: var(--panel); padding: 6px 10px; min-width: 0; border-radius: 0; }
+.finders input:focus, .finders select:focus { border-color: var(--cyan); }
+.finders input { width: 220px; max-width: 100%; }
+select option { background: var(--panel); }
+
+/* Cartes des jeux */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 20px; padding-bottom: 56px; }
+.card { position: relative; background: linear-gradient(135deg, var(--panel2), var(--panel)); border: 1px solid var(--line); border-left: 3px solid var(--y); padding: 14px; display: grid;
+  grid-template-columns: 92px minmax(0, 1fr); gap: 14px; min-width: 0; clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%); }
+.card:hover { border-color: rgba(0, 240, 255, .5); border-left-color: var(--y); }
+.box { aspect-ratio: 3 / 4; border: 1px solid var(--cyan); background: #05060a; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 14px -4px rgba(0, 240, 255, .5); }
+.box img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.box span { font-family: var(--font-display); font-size: 26px; color: var(--red); }
+.info { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.card-top { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.plat { font-family: var(--font-display); font-size: 11px; text-transform: uppercase; letter-spacing: .14em; font-weight: 700; color: var(--cyan); border: 1px solid var(--cyan); padding: 0 6px; }
+.stamp { margin-left: auto; font-family: var(--font-display); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; padding: 1px 8px; border: 1px solid currentColor; }
+.stamp::before { content: "[ "; } .stamp::after { content: " ]"; }
+.s-playing { background: var(--y); color: var(--y-ink); border-color: var(--y); }
+.s-backlog, .s-wish { color: var(--muted); }
+.s-done { color: var(--cyan); }
+.s-platinum { background: var(--cyan); color: #001014; border-color: var(--cyan); box-shadow: 0 0 12px rgba(0, 240, 255, .6); }
+.s-dropped { color: var(--red); }
+.card h3 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 20px; line-height: 1.12; overflow-wrap: anywhere; text-transform: uppercase; letter-spacing: .02em; }
+.hours { display: flex; align-items: baseline; gap: 6px; }
+.hours .num { font-family: var(--font-display); font-weight: 700; font-size: 32px; line-height: .9; color: var(--y); text-shadow: 0 0 14px rgba(243, 230, 0, .35); font-variant-numeric: tabular-nums; }
+.hours .u { font-family: var(--font-display); font-size: 12px; color: var(--muted); letter-spacing: .14em; }
+.hours .u::after { content: " DE JEU"; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--muted); font-size: 14px; }
+.meta b { color: var(--text); font-family: var(--font-display); font-weight: 700; }
+.note { margin: 0; font-size: 14px; color: var(--muted); border-left: 2px solid var(--red); padding-left: 8px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; border-top: 1px dashed var(--line); padding-top: 10px; align-items: center; }
+.actions .btn { padding: 5px 11px; font-size: 12px; }
+.actions .spacer { flex: 1; }
+
+.empty { grid-column: 1 / -1; text-align: center; padding: 44px 16px; border: 1px dashed var(--cyan); background: var(--panel); }
+.empty h2 { font-family: var(--font-display); font-weight: 700; font-size: 22px; margin: 0 0 8px; text-transform: uppercase; color: var(--y); }
+.empty .kana-sm { font-family: var(--font-display); font-size: 30px; color: var(--red); display: block; margin-bottom: 6px; }
+
+/* Formulaire */
+.overlay { position: fixed; inset: 0; background: var(--veil); display: flex; align-items: flex-start; justify-content: center; overflow-y: auto; z-index: 20; padding: 24px 16px; }
+.panel { position: relative; background: var(--panel); border: 1px solid var(--cyan); border-top: 3px solid var(--y); width: 100%; max-width: 580px; padding: 22px;
+  clip-path: polygon(0 0, calc(100% - 26px) 0, 100% 26px, 100% 100%, 26px 100%, 0 calc(100% - 26px)); }
+.panel h2 { margin: 0 0 16px; font-family: var(--font-display); font-weight: 700; font-size: 24px; text-transform: uppercase; padding-right: 60px; color: var(--y); }
+.panel .corner { position: absolute; top: 14px; right: 30px; font-family: var(--font-display); font-size: 12px; color: var(--cyan); letter-spacing: .2em; }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field.full { grid-column: 1 / -1; }
+.field label { font-family: var(--font-display); font-size: 11px; text-transform: uppercase; letter-spacing: .14em; font-weight: 600; color: var(--cyan); }
+.field input, .field select, .field textarea { border: 1px solid var(--line); background: var(--bg); padding: 8px 10px; width: 100%; border-radius: 0; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--y); }
+.field textarea { min-height: 70px; resize: vertical; }
+.field small { color: var(--muted); font-size: 13px; }
+.row { display: flex; gap: 8px; }
+.row input { flex: 1; min-width: 0; }
+.row .btn { padding: 6px 12px; white-space: nowrap; }
+.preview { display: flex; gap: 10px; align-items: center; }
+.preview .box { width: 54px; flex: none; }
+.panel-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; align-items: center; }
+.panel-actions .spacer { flex: 1; }
+.err { color: var(--stop); font-size: 14px; font-weight: 700; margin: 10px 0 0; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 22px; z-index: 30; background: var(--y); color: var(--y-ink); font-family: var(--font-display); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em; padding: 8px 20px; font-size: 13px; max-width: calc(100% - 32px);
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .btn, .tab, .stat, .card { transition: background-color .12s, border-color .15s, color .12s; }
+  .cover { animation: boot .45s steps(6, end) both; }
+  .brand h1 em { display: inline-block; animation: glitch 1.2s .5s steps(2, end) both; }
+  .intro .card { animation: scan-in .4s ease-out both; animation-delay: calc(var(--i, 0) * 60ms + .2s); }
+  .hours .num.bump { display: inline-block; animation: num-pop .35s ease-out; }
+  .overlay:not([hidden]) .panel { animation: scan-in .25s ease-out; }
+  @keyframes boot { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
+  @keyframes glitch { 0% { transform: translate(3px, -1px) skewX(-8deg); } 20% { transform: translate(-3px, 1px); } 40% { transform: translate(2px, 0) skewX(6deg); } 60% { transform: translate(-1px, 1px); } 100% { transform: none; } }
+  @keyframes scan-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes num-pop { 0% { transform: scale(1); } 40% { transform: scale(1.25) skewX(-6deg); } 100% { transform: scale(1); } }
+}
+@media (max-width: 720px) {
+  .cover { grid-template-columns: auto minmax(0, 1fr); padding: 18px 20px; }
+  .cover .btn.big { grid-column: 1 / -1; justify-self: start; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid { grid-template-columns: 1fr; }
+  .finders { width: 100%; }
+  .finders input { flex: 1; width: auto; }
+}
+@media (max-width: 460px) { .fields { grid-template-columns: 1fr; } .card { grid-template-columns: 72px minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+<header class="wrap cover-wrap">
+  <div class="cover">
+    <div class="kana" aria-hidden="true">ゲーム</div>
+    <div class="brand">
+      <h1>Mes <em>Jeux</em></h1>
+      <div class="bubble">Tes jeux PC et PS5 : en cours, à faire, finis et platinés.</div>
+    </div>
+    <button class="btn primary big" id="addBtn" type="button">+ Ajouter un jeu</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="stats" id="stats" aria-label="Résumé"></section>
+  <div class="toolbar">
+    <div class="tabs" id="tabs" role="group" aria-label="Filtrer"></div>
+    <div class="finders">
+      <input id="search" type="search" placeholder="Chercher un jeu…" aria-label="Chercher un jeu">
+      <select id="sort" aria-label="Trier">
+        <option value="recent">Joués récemment</option>
+        <option value="title">Titre A → Z</option>
+        <option value="hours">Plus d'heures</option>
+        <option value="rating">Meilleure note</option>
+      </select>
+    </div>
+  </div>
+  <section class="grid" id="grid" aria-live="polite"></section>
+</main>
+
+<div class="overlay" id="overlay" hidden>
+  <form class="panel" id="form" novalidate>
+    <span class="corner" aria-hidden="true">// DATA_ENTRY</span>
+    <h2 id="formTitle">Nouveau jeu</h2>
+    <div class="fields">
+      <div class="field full">
+        <label for="f-title">Titre</label>
+        <input id="f-title" required maxlength="140" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="f-platform">Plateforme</label>
+        <select id="f-platform"></select>
+      </div>
+      <div class="field">
+        <label for="f-status">Statut</label>
+        <select id="f-status"></select>
+      </div>
+      <div class="field">
+        <label for="f-hours">Heures de jeu</label>
+        <input id="f-hours" type="number" min="0" step="0.5" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label for="f-rating">Note sur 10</label>
+        <input id="f-rating" type="number" min="0" max="10" step="0.5" inputmode="decimal">
+      </div>
+      <div class="field full">
+        <label for="f-cover">Jaquette</label>
+        <div class="preview">
+          <div class="box" id="coverPrev"><span>？</span></div>
+          <div class="row" style="flex:1">
+            <input id="f-cover" placeholder="Trouvée automatiquement, ou colle un lien d'image" autocomplete="off">
+            <button class="btn ghost" id="coverBtn" type="button">Chercher</button>
+          </div>
+        </div>
+        <small id="coverHint">La jaquette est cherchée sur Wikipédia à l'enregistrement si ce champ est vide.</small>
+      </div>
+      <div class="field full">
+        <label for="f-note">Notes perso</label>
+        <textarea id="f-note" maxlength="600" placeholder="Où tu en es, trophées qui restent, avis…"></textarea>
+      </div>
+    </div>
+    <p class="err" id="formErr" hidden></p>
+    <div class="panel-actions">
+      <button class="btn danger" id="delBtn" type="button" hidden>Supprimer</button>
+      <span class="spacer"></span>
+      <button class="btn ghost" id="cancelBtn" type="button">Annuler</button>
+      <button class="btn primary" id="saveBtn" type="submit">Enregistrer</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+  const STATUSES = { playing: "En cours", backlog: "À jouer", wish: "Envie", done: "Fini", platinum: "Platiné / 100 %", dropped: "Abandonné" };
+  const PLATFORMS = ["PC", "PS5", "PS4", "Switch", "Xbox", "Mobile", "Autre"];
+  const KEY = "qg-games";
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const num = (v) => (typeof v === "number" && isFinite(v) ? v : null);
+  const fmt = (v) => String(Math.round(v * 10) / 10).replace(".", ",");
+  const safeUrl = (u) => { try { const x = new URL(u); return x.protocol === "https:" || x.protocol === "http:" ? x.href : ""; } catch (e) { return ""; } };
+
+  let items = [];
+  let filter = "all", query = "", sort = "recent", editingId = null, introPlayed = false;
+  const bumped = new Set();
+
+  function load() {
+    try { items = JSON.parse(localStorage.getItem(KEY) || "[]"); } catch (e) { items = []; }
+    if (!Array.isArray(items)) items = [];
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(items)); }
+    catch (e) { toast("Ce navigateur bloque l'enregistrement"); }
+  }
+  try { filter = localStorage.getItem("qg-games-filter") || "all"; sort = localStorage.getItem("qg-games-sort") || "recent"; } catch (e) {}
+  $("sort").value = sort;
+
+  for (const p of PLATFORMS) $("f-platform").insertAdjacentHTML("beforeend", `<option>${p}</option>`);
+  for (const [k, v] of Object.entries(STATUSES)) $("f-status").insertAdjacentHTML("beforeend", `<option value="${k}">${v}</option>`);
+
+  function toast(msg) {
+    const t = $("toast");
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(toast.t);
+    toast.t = setTimeout(() => (t.hidden = true), 2400);
+  }
+
+  function ago(ts) {
+    if (!ts) return "";
+    const days = Math.floor((new Date(new Date().toDateString()) - new Date(new Date(ts).toDateString())) / 86400000);
+    if (days <= 0) return "aujourd'hui";
+    if (days === 1) return "hier";
+    if (days < 30) return `il y a ${days} j`;
+    return new Date(ts).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+  }
+
+  const EXTRA = { hours: "Avec heures de jeu" };
+  function matches(g) {
+    if (filter === "all") return true;
+    if (filter === "finished") return g.status === "done" || g.status === "platinum";
+    if (filter === "hours") return (num(g.hours) ?? 0) > 0;
+    return g.status === filter;
+  }
+
+  function renderStats() {
+    const playing = items.filter((g) => g.status === "playing").length;
+    const backlog = items.filter((g) => g.status === "backlog").length;
+    const finished = items.filter((g) => g.status === "done" || g.status === "platinum").length;
+    const hours = items.reduce((s, g) => s + (num(g.hours) ?? 0), 0);
+    $("stats").innerHTML = [
+      ["En cours", playing, false, "playing"],
+      ["À jouer", backlog, backlog > 0, "backlog"],
+      ["Finis", finished, false, "finished"],
+      ["Heures de jeu", Math.round(hours).toLocaleString("fr-FR"), false, "hours"]
+    ].map(([l, v, hot, f]) => `<button type="button" class="stat${hot ? " hot" : ""}" data-filter="${f}" aria-pressed="${filter === f}"><span class="v">${v}</span><span class="l">${l}</span></button>`).join("");
+  }
+
+  function renderTabs() {
+    const entries = [["all", "Tous", items.length], ...Object.entries(STATUSES).map(([k, v]) => [k, v, items.filter((g) => g.status === k).length])];
+    if (filter === "finished") entries.push(["finished", "Finis + platinés", items.filter(matches).length]);
+    if (EXTRA[filter]) entries.push([filter, EXTRA[filter], items.filter(matches).length]);
+    $("tabs").innerHTML = entries.map(([k, v, n]) => `<button class="tab" type="button" data-filter="${k}" aria-pressed="${filter === k}">${v}<b>${n}</b></button>`).join("");
+  }
+
+  function card(g, i) {
+    const h = num(g.hours) ?? 0;
+    const metas = [];
+    if (num(g.rating) != null) metas.push(`<span>Note <b>${fmt(g.rating)}/10</b></span>`);
+    if (g.updatedAt) metas.push(`<span>Joué ${ago(g.updatedAt)}</span>`);
+    const cover = safeUrl(g.cover);
+    return `<article class="card" data-id="${esc(g.id)}" style="--i:${Math.min(i, 11)}">
+      <div class="box">${cover ? `<img src="${esc(cover)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span aria-hidden="true">？</span>`}</div>
+      <div class="info">
+        <div class="card-top">
+          <span class="plat">${esc(g.platform || "PC")}</span>
+          <span class="stamp s-${esc(g.status)}">${STATUSES[g.status] || "En cours"}</span>
+        </div>
+        <h3>${esc(g.title)}</h3>
+        <div class="hours"><span class="num${bumped.has(g.id) ? " bump" : ""}">${fmt(h)}</span><span class="u">H</span></div>
+        ${metas.length ? `<div class="meta">${metas.join("")}</div>` : ""}
+        ${g.note ? `<p class="note">${esc(g.note)}</p>` : ""}
+        <div class="actions">
+          <button class="btn ghost" type="button" data-act="minus" aria-label="Retirer une heure à ${esc(g.title)}">−1 h</button>
+          <button class="btn" type="button" data-act="plus" aria-label="Ajouter une heure à ${esc(g.title)}">+1 h</button>
+          <span class="spacer"></span>
+          <button class="btn ghost" type="button" data-act="edit">Modifier</button>
+        </div>
+      </div>
+    </article>`;
+  }
+
+  function render() {
+    renderStats();
+    renderTabs();
+    let shown = items.filter(matches);
+    const q = query.trim().toLowerCase();
+    if (q) shown = shown.filter((g) => String(g.title).toLowerCase().includes(q) || String(g.note || "").toLowerCase().includes(q));
+    shown.sort((a, b) => {
+      if (sort === "title") return String(a.title).localeCompare(String(b.title), "fr");
+      if (sort === "hours") return (num(b.hours) ?? 0) - (num(a.hours) ?? 0);
+      if (sort === "rating") return (num(b.rating) ?? -1) - (num(a.rating) ?? -1);
+      return (b.updatedAt || 0) - (a.updatedAt || 0);
+    });
+    const grid = $("grid");
+    if (!items.length) grid.innerHTML = `<div class="empty"><span class="kana-sm" aria-hidden="true">シーン…</span><h2>Aucun jeu pour l'instant</h2><p>Ajoute ton premier jeu avec « Ajouter un jeu » en haut.</p></div>`;
+    else if (!shown.length) grid.innerHTML = `<div class="empty"><span class="kana-sm" aria-hidden="true">？</span><h2>Aucun jeu ici</h2><p>Rien ne correspond à ce filtre ou à cette recherche.</p></div>`;
+    else {
+      if (!introPlayed) { introPlayed = true; grid.classList.add("intro"); setTimeout(() => grid.classList.remove("intro"), 1200); }
+      grid.innerHTML = shown.map(card).join("");
+    }
+    bumped.clear();
+  }
+
+  function update(id, patch) {
+    items = items.map((g) => (g.id === id ? { ...g, ...patch } : g));
+    save();
+    render();
+  }
+
+  // ---- Jaquette : image de la page Wikipédia anglaise du jeu ----
+  const STOP = new Set(["the", "a", "of", "le", "la", "les", "de", "du", "des", "et", "and", "video", "game", "jeu"]);
+  const words = (s) => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\(.*?\)/g, " ").split(/[^a-z0-9]+/).filter((w) => w && !STOP.has(w));
+  function titleScore(q, c) {
+    const a = new Set(words(q)), b = new Set(words(c));
+    if (!a.size || !b.size) return 0;
+    const common = [...a].filter((w) => b.has(w)).length;
+    return Math.min(common / a.size, common / b.size);
+  }
+
+  async function findCover(title) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 10000);
+    try {
+      const url = "https://en.wikipedia.org/w/api.php?format=json&origin=*&action=query&prop=pageimages&piprop=thumbnail&pithumbsize=400&pilicense=any&redirects=1&generator=search&gsrlimit=6&gsrsearch="
+        + encodeURIComponent(title + " video game");
+      const j = await (await fetch(url, { signal: ctrl.signal })).json();
+      const pages = Object.values(j.query?.pages || {})
+        .filter((p) => p.thumbnail && titleScore(title, p.title) >= 0.5)
+        .sort((a, b) => titleScore(title, b.title) - titleScore(title, a.title) || a.index - b.index);
+      return pages[0]?.thumbnail.source.replace(/\?.*$/, "") || "";
+    } catch (e) {
+      return "";
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function showPreview() {
+    const u = safeUrl($("f-cover").value.trim());
+    $("coverPrev").innerHTML = u ? `<img src="${esc(u)}" alt="" referrerpolicy="no-referrer">` : `<span aria-hidden="true">？</span>`;
+  }
+
+  $("coverBtn").addEventListener("click", async () => {
+    const title = $("f-title").value.trim();
+    if (!title) { $("coverHint").textContent = "Écris d'abord le titre du jeu."; return; }
+    $("coverBtn").disabled = true;
+    $("coverHint").textContent = "Recherche de la jaquette…";
+    const u = await findCover(title);
+    $("coverBtn").disabled = false;
+    if (u) { $("f-cover").value = u; showPreview(); $("coverHint").textContent = "Jaquette trouvée sur Wikipédia. Colle un autre lien si ce n'est pas la bonne."; }
+    else $("coverHint").textContent = "Pas de jaquette trouvée. Colle un lien d'image (clic droit sur une image → Copier l'adresse de l'image).";
+  });
+  $("f-cover").addEventListener("change", showPreview);
+
+  // ---- Formulaire ----
+  function openForm(id) {
+    editingId = id || null;
+    const g = id ? items.find((x) => x.id === id) : null;
+    $("formTitle").textContent = g ? "Modifier le jeu" : "Nouveau jeu";
+    $("f-title").value = g?.title || "";
+    $("f-platform").value = g?.platform || "PC";
+    $("f-status").value = g?.status || "playing";
+    $("f-hours").value = num(g?.hours) ?? "";
+    $("f-rating").value = num(g?.rating) ?? "";
+    $("f-cover").value = g?.cover || "";
+    $("f-note").value = g?.note || "";
+    $("coverHint").textContent = "La jaquette est cherchée sur Wikipédia à l'enregistrement si ce champ est vide.";
+    showPreview();
+    $("delBtn").hidden = !g;
+    $("delBtn").classList.remove("armed");
+    $("delBtn").textContent = "Supprimer";
+    $("formErr").hidden = true;
+    $("overlay").hidden = false;
+    $("f-title").focus();
+  }
+  const closeForm = () => { $("overlay").hidden = true; editingId = null; };
+
+  function readNum(id, max) {
+    const raw = $(id).value.trim();
+    if (raw === "") return null;
+    const v = Number(raw.replace(",", "."));
+    if (!isFinite(v) || v < 0) return undefined;
+    return max != null ? Math.min(v, max) : v;
+  }
+
+  $("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const err = $("formErr");
+    const title = $("f-title").value.trim();
+    if (!title) { err.textContent = "Donne un titre au jeu."; err.hidden = false; return; }
+    const hours = readNum("f-hours"), rating = readNum("f-rating", 10);
+    if (hours === undefined || rating === undefined) { err.textContent = "Les nombres doivent être positifs."; err.hidden = false; return; }
+    const coverRaw = $("f-cover").value.trim();
+    if (coverRaw && !safeUrl(coverRaw)) { err.textContent = "Le lien de la jaquette doit commencer par https://"; err.hidden = false; return; }
+    const data = {
+      title, platform: $("f-platform").value, status: $("f-status").value,
+      hours: hours ?? 0, rating, cover: coverRaw ? safeUrl(coverRaw) : "", note: $("f-note").value.trim(), updatedAt: Date.now()
+    };
+    const id = editingId || "g" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    if (editingId) items = items.map((g) => (g.id === id ? { id, ...data } : g));
+    else items = [...items, { id, ...data }];
+    save();
+    closeForm();
+    render();
+    toast(editingId ? "Jeu mis à jour" : "Jeu ajouté");
+    // Jaquette cherchée après coup, sans faire attendre
+    if (!data.cover) {
+      const u = await findCover(title);
+      if (u && items.some((g) => g.id === id && !g.cover)) update(id, { cover: u });
+    }
+  });
+
+  $("delBtn").addEventListener("click", () => {
+    const b = $("delBtn");
+    if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "Confirmer la suppression"; return; }
+    items = items.filter((g) => g.id !== editingId);
+    save();
+    closeForm();
+    render();
+    toast("Jeu supprimé");
+  });
+  $("cancelBtn").addEventListener("click", closeForm);
+  $("overlay").addEventListener("click", (e) => { if (e.target === $("overlay")) closeForm(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("overlay").hidden) closeForm(); });
+  $("addBtn").addEventListener("click", () => openForm(null));
+
+  $("grid").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-act]");
+    if (!b) return;
+    const id = b.closest(".card").dataset.id;
+    const g = items.find((x) => x.id === id);
+    if (!g) return;
+    if (b.dataset.act === "edit") return openForm(id);
+    const h = Math.max(0, (num(g.hours) ?? 0) + (b.dataset.act === "plus" ? 1 : -1));
+    const patch = { hours: h, updatedAt: Date.now() };
+    if (b.dataset.act === "plus" && (g.status === "backlog" || g.status === "wish")) patch.status = "playing";
+    bumped.add(id);
+    update(id, patch);
+  });
+
+  $("grid").addEventListener("error", (e) => {
+    // Image cassée : on remet le point d'interrogation
+    if (e.target.tagName === "IMG") e.target.replaceWith(Object.assign(document.createElement("span"), { textContent: "？" }));
+  }, true);
+
+  const setFilter = (f) => { filter = f; try { localStorage.setItem("qg-games-filter", f); } catch (e) {} render(); };
+  $("stats").addEventListener("click", (e) => { const b = e.target.closest("[data-filter]"); if (b) setFilter(filter === b.dataset.filter ? "all" : b.dataset.filter); });
+  $("tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-filter]"); if (b) setFilter(b.dataset.filter); });
+  $("search").addEventListener("input", (e) => { query = e.target.value; render(); });
+  $("sort").addEventListener("change", (e) => { sort = e.target.value; try { localStorage.setItem("qg-games-sort", sort); } catch (err) {} render(); });
+
+  // Une sauvegarde restaurée depuis le tableau de bord : on relit la liste
+  window.addEventListener("storage", (e) => { if (e.key === KEY || e.key === null) { load(); render(); } });
+
+  // Jaquettes manquantes (jeux ajoutés sans réseau, sauvegarde restaurée…) : une seule tentative par jeu
+  async function fillCovers() {
+    for (const g of items.filter((x) => !x.cover && !x.coverTried)) {
+      const u = await findCover(g.title);
+      if (items.some((x) => x.id === g.id)) update(g.id, u ? { cover: u } : { coverTried: true });
+    }
+  }
+
+  load();
+  render();
+  setTimeout(fillCovers, 800);
+})();
+</script>
+</body>
+</html>
