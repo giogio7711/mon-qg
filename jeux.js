@@ -338,20 +338,39 @@
 
   const PS_BADGE = /^(PS4|PS5)(\s*[\/,·|]?\s*(PS4|PS5))?$/i;
   const PS_LABEL = /^(PS[45]|PS VR2?|Boutique|Jeux|Accessoires|Actualités|Assistance|PS Plus|Rechercher|Connexion|Bibliothèque de jeux|Game Library|Acheté\(s\)|Achetés?|Purchased|Votre collection|Ta collection|Télécharger|Download|Ajouter à la file d'attente|Installé|Installed|Gratuit|Free|Jeu|Game|Trier|Filtrer|\d+ ?%|\d+|[<>‹›«»]|Store|Games|Accessories|News|Support)$/i;
+  // Une page de playstation.com copiée : en-tête, menu et bas de page à écarter
+  const PS_SITE = /sony interactive entertainment|bibliothèque de jeux|game library|library\.playstation|télécharger\n|ajouter à la file d'attente/i;
+  const PS_FOOTER = /sony interactive|tous droits|all rights|^application (android|ios)$|conditions|confidentialit|privacy|cookies|plan du site|site map|accessibilit|mentions légales|legal|à propos|about|carrières|careers|presse|newsroom|newsletter|pays ?\/ ?région|country|^(français|english|france)\b|^©|playstation (store|studios|network|app|direct|blog)|^(ps5|ps4|ps vr2) ?[-–:]|^bibliothèque de jeux|^game library|aide|help|^se (connecter|déconnecter)|^(mon compte|account|paramètres|settings|profil|profile)$/i;
+  const PS_BUTTON = /^(télécharger|download|ajouter à la file d'attente|add to queue|installé|installed|jouer|play|acheter|buy)$/i;
   function parsePsPage(raw) {
     const lines = raw.split(/\r?\n/).map((l) => l.replace(/[\s  ]+/g, " ").trim()).filter(Boolean);
+    const isPs = PS_SITE.test(raw.replace(/\r/g, "")) || lines.some((l) => /sony interactive/i.test(l));
+    const badges = lines.filter((l) => PS_BADGE.test(l)).length;
+    if (!isPs && badges < 2) return [];
+    const bad = (l) => PS_LABEL.test(l) || PS_BADGE.test(l) || PS_BUTTON.test(l) || PS_FOOTER.test(l);
     const out = [], seen = new Set();
-    lines.forEach((l, i) => {
-      if (!PS_BADGE.test(l)) return;
-      let title = "";
-      for (let j = i - 1; !title && j >= 0 && j >= i - 3; j--) if (!PS_LABEL.test(lines[j]) && !PS_BADGE.test(lines[j])) title = cleanTitle(lines[j]);
+    const push = (t, platform) => {
+      const p = (t.match(/\s(PS[45])$/i) || [])[1];
+      const title = cleanTitle(t.replace(/\s(PS[45])(\s*[\/,·|]?\s*PS[45])?$/i, ""));
       const k = keyOf(title);
-      if (!title || title.length < 2 || seen.has(k)) return;
+      if (!title || title.length < 2 || seen.has(k) || bad(title)) return;
       seen.add(k);
-      out.push({ title, platform: /PS5/i.test(l) ? "PS5" : "PS4", hours: 0, cover: "" });
+      out.push({ title, platform: p ? p.toUpperCase() : platform, hours: 0, cover: "" });
+    };
+    // Chaque jeu : son titre, parfois « PS5 » ou « PS4 », puis son bouton « Télécharger »
+    lines.forEach((l, i) => {
+      if (!PS_BADGE.test(l) && !PS_BUTTON.test(l)) return;
+      let plat = PS_BADGE.test(l) ? (/PS5/i.test(l) ? "PS5" : "PS4") : null;
+      for (let j = i - 1; j >= 0 && j >= i - 3; j--) {
+        if (PS_BADGE.test(lines[j])) { plat = plat || (/PS5/i.test(lines[j]) ? "PS5" : "PS4"); continue; }
+        if (PS_BUTTON.test(lines[j])) break;
+        if (!bad(lines[j])) { push(lines[j], plat || "PS5"); break; }
+      }
     });
-    // Au moins 2 jeux pour être sûr que c'est bien la bibliothèque (et pas un titre isolé « PS5 »)
-    return out.length >= 2 ? out : [];
+    out.junk = new Set(lines.filter((l) => bad(l) || PS_FOOTER.test(l)).map(keyOf));
+    // Sans étiquette ni bouton : on garde toutes les lignes sauf le site lui-même
+    if (!out.length && isPs) for (const l of lines) push(l, "PS5");
+    return out;
   }
 
   function parseSteamPage(raw) {
@@ -410,15 +429,26 @@
     // Faux jeux laissés par l'ancien favori (le lien « Page du magasin » de Steam pris pour un titre)
     const junk = /^(page du magasin|store page|succès|achievements)$/i;
     items = items.filter((g) => !junk.test(cleanTitle(g.title)));
-    const byKey = new Map(items.map((g) => [keyOf(g.title) + "|" + g.platform, g]));
+    // Faux jeux créés par un collage précédent de la même page PlayStation (menu, bas de page…) :
+    // seulement s'ils n'ont jamais été touchés (0 h, pas de note, pas d'avis)
+    let removed = 0;
+    if (list.junk) items = items.filter((g) => {
+      const fake = /^PS[45]$/.test(g.platform) && list.junk.has(keyOf(g.title)) && !(num(g.hours) > 0) && !g.note && g.rating == null;
+      if (fake) removed++;
+      return !fake;
+    });
+    // PS4 et PS5 comptent comme une seule console : pas de doublon si la plateforme a changé
+    const plat = (p) => /^PS[45]$/.test(p) ? "PS" : p;
+    const byKey = new Map(items.map((g) => [keyOf(g.title) + "|" + plat(g.platform), g]));
     let added = 0, updated = 0;
     const fresh = [];
     for (const g of list) {
-      const k = keyOf(g.title) + "|" + g.platform;
+      const k = keyOf(g.title) + "|" + plat(g.platform);
       if (!keyOf(g.title) || junk.test(g.title)) continue;
       const old = byKey.get(k);
       if (old) {
         const patch = {};
+        if (old.platform !== g.platform && list.junk && !old.updatedAt) patch.platform = g.platform;
         if (g.hours > (num(old.hours) ?? 0)) patch.hours = g.hours;
         if (!old.cover && g.cover) patch.cover = g.cover;
         if (Object.keys(patch).length) { Object.assign(old, patch); updated++; }
@@ -436,9 +466,10 @@
     $("importText").value = "";
     $("importBox").open = false;
     const s = (n, w) => `${n} ${w}${n > 1 ? "x" : ""}`;
-    toast(added && updated ? `${s(added, "jeu")} ajouté${added > 1 ? "s" : ""} · ${updated} mis à jour`
+    toast((added && updated ? `${s(added, "jeu")} ajouté${added > 1 ? "s" : ""} · ${updated} mis à jour`
       : added ? `${s(added, "jeu")} ajouté${added > 1 ? "s" : ""}` : updated ? `${s(updated, "jeu")} mis à jour`
-      : steamNoHours ? "Heures introuvables dans le texte collé" : "Tous ces jeux sont déjà là");
+      : steamNoHours ? "Heures introuvables dans le texte collé" : "Tous ces jeux sont déjà là")
+      + (removed ? ` · ${removed} faux jeu${removed > 1 ? "x" : ""} retiré${removed > 1 ? "s" : ""}` : ""));
     fillCovers();   // jaquettes manquantes cherchées sur Wikipédia, une à une
   });
 
