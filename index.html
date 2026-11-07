@@ -131,6 +131,12 @@ nav button .dot { min-width: 20px; height: 20px; border-radius: 10px; background
 .sync::before { content: "● "; color: var(--cyan); }
 .sync.bad::before { color: var(--stop); }
 .sync:empty { display: none; }
+.refresh { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line, rgba(255,255,255,.15)); background: var(--panel2); color: var(--text); cursor: pointer; display: grid; place-items: center; padding: 0; transition: border-color .2s, color .2s; }
+.refresh:hover, .refresh:focus-visible { border-color: var(--cyan); color: var(--cyan); }
+.sync:empty + .refresh { margin-left: auto; }
+.refresh.spin svg { animation: qg-spin .8s linear infinite; }
+@keyframes qg-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .refresh.spin svg { animation: none; } }
 .me { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--violet); background: var(--panel2); color: var(--text); font-weight: 800; cursor: pointer; overflow: hidden; padding: 0;
   box-shadow: 0 0 12px -2px var(--violet); }
 .me img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -149,7 +155,7 @@ nav button .dot { min-width: 20px; height: 20px; border-radius: 10px; background
 .login-box .err { color: var(--stop); font-weight: 700; }
 .login-box small { color: var(--muted); }
 .btn.big { padding: 12px 22px; font-size: 16px; }
-@media (max-width: 560px) { .sync { display: none; } }
+@media (max-width: 560px) { .sync { display: none; } .refresh { margin-left: auto; } }
 </style>
 </head>
 <body>
@@ -163,6 +169,7 @@ nav button .dot { min-width: 20px; height: 20px; border-radius: 10px; background
       <button type="button" data-tab="streams">Streams <span class="dot" id="dot-streams" hidden></span></button>
     </nav>
     <span class="sync" id="syncState" aria-live="polite"></span>
+    <button class="refresh" id="refreshBtn" type="button" title="Actualiser" aria-label="Actualiser l'appli"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></button>
     <button class="me" id="userBtn" type="button" hidden aria-label="Mon compte, se déconnecter"></button>
   </div>
 </header>

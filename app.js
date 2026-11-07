@@ -274,4 +274,21 @@
   });
 
   if (online && "serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+
+  // Bouton « Actualiser » : recharge l'appli avec la dernière version publiée (utile dans l'appli installée, sans barre d'adresse)
+  const refresh = document.getElementById("refreshBtn");
+  if (refresh) refresh.addEventListener("click", async () => {
+    if (refresh.classList.contains("spin")) return;
+    refresh.classList.add("spin");
+    try {
+      if (online) {
+        const files = ["index.html", "mangatheque.html", "jeux.html", "streams.html", "app.js", "mangatheque.js", "jeux.js", "streams.js", "guard.js", "sync.js"];
+        const reg = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration() : null;
+        await Promise.race([
+          Promise.all([reg ? reg.update().catch(() => {}) : null, ...files.map((f) => fetch(f, { cache: "reload" }).catch(() => {}))]),
+          new Promise((r) => setTimeout(r, 6000))
+        ]);
+      }
+    } finally { location.reload(); }
+  });
 })();
