@@ -67,6 +67,12 @@ body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15
 .chip.n{color:var(--accent);background:var(--accent-soft)}
 .chip.w{color:var(--warn);background:var(--warn-soft)}
 .tagbest{font-family:var(--f-mono);font-size:10px;color:var(--ok);letter-spacing:.08em;text-transform:uppercase}
+/* Suggestion achetable : toute la carte est cliquable (le lien s'étend dessus) */
+.up.shop{position:relative;cursor:pointer;transition:border-color .15s,transform .15s}
+.up.shop:hover{border-color:rgba(255,59,78,.6)}
+.buy{margin-left:auto;white-space:nowrap;font-size:12px;font-weight:600;color:var(--accent);text-decoration:none}
+.buy::after{content:"";position:absolute;inset:0;border-radius:inherit}
+.up.shop:hover .buy{text-decoration:underline}
 .golink{all:unset;cursor:pointer;color:var(--accent);font-size:12.5px}
 .list{border-top:1px solid var(--line);padding:12px 14px;display:flex;flex-wrap:wrap;gap:6px}
 .list button{font:500 12px var(--f-body);color:var(--muted);background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:99px;padding:4px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:color .15s,border-color .15s}
@@ -81,7 +87,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15
 @media (min-width:1280px) and (min-height:620px){
   .panel{width:min(920px,50vw);top:20px;bottom:20px}
   .hud{max-width:calc(100% - min(920px,50vw) - 80px)}
-  .p-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:18px;align-content:start}
+  .p-body{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.4fr);gap:18px;align-content:start}
   .pc2 h3{margin-top:2px}
   .p-body{padding:16px 18px 10px}
   .list{padding:10px 14px}
@@ -92,7 +98,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15
   .cur{margin-top:10px}
   .panel h2{font-size:28px}
   .up{padding:10px 12px;gap:4px}
-  .up p{font-size:13px}
+  .up p{font-size:13px;line-height:1.4}
 }
 
 @media (max-width:900px){

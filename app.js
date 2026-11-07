@@ -307,7 +307,7 @@
     refresh.classList.add("spin");
     try {
       if (online) {
-        const files = ["index.html", "mangatheque.html", "jeux.html", "streams.html", "pc.html", "app.js", "mangatheque.js", "jeux.js", "streams.js", "pc.js", "guard.js", "sync.js"];
+        const files = ["index.html", "mangatheque.html", "jeux.html", "streams.html", "pc.html", "app.js", "mangatheque.js", "jeux.js", "streams.js", "pc.js", "guard.js", "sync.js", "tour-3d.html", "tour-3d.js"];
         const reg = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration() : null;
         await Promise.race([
           Promise.all([reg ? reg.update().catch(() => {}) : null, ...files.map((f) => fetch(f, { cache: "reload" }).catch(() => {}))]),

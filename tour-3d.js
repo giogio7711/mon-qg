@@ -5,50 +5,50 @@ const Y=t=>['y',t],N=t=>['n',t],W=t=>['w',t];
 const PARTS={
  case:{num:1,cat:"Boîtier",name:"Corsair Crystal 570X RGB",spec:"Moyen tour ATX · 4 vitres trempées · carte graphique 370 mm max",st:"ok",
   ups:[{n:"Garder le 570X",p:"0 €",d:"Il accepte toutes les cartes graphiques que ton alim peut alimenter.",c:[Y("GPU ≤ 370 mm"),Y("ATX")],best:1},
-       {n:"Boîtier à façade mesh",p:"prix à vérifier",d:"Meilleur flux d'air que la façade vitrée. Utile seulement si les températures montent avec une nouvelle carte graphique.",c:[Y("ATX"),W("Tout remonter")],no:1}]},
+       {n:"Boîtier à façade mesh",q:"boitier PC ATX mesh",p:"prix à vérifier",d:"Meilleur flux d'air que la façade vitrée. Utile seulement si les températures montent avec une nouvelle carte graphique.",c:[Y("ATX"),W("Tout remonter")],no:1}]},
  mobo:{num:2,cat:"Carte mère",name:"ASUS TUF GAMING B760-PLUS WIFI D4",spec:"LGA1700 · 4 × DDR4 · PCIe 5.0 x16 · 3 × M.2 PCIe 4.0 · Wi-Fi 6 · BIOS 1663 (08/2024)",st:"ok",
   ups:[{n:"Garder la carte mère",p:"0 €",d:"Elle supporte toutes les améliorations conseillées : PCIe 5.0, 3 slots NVMe libres, 2 slots RAM libres.",c:[Y("PCIe 5.0 x16"),Y("3 × M.2 libres")],best:1},
        {n:"Mettre à jour le BIOS (plus tard)",p:"gratuit",d:"Ton BIOS 1663 (août 2024) suffit, y compris pour une RTX 5060. Mets-le à jour seulement avant de passer à un Core de 14e génération : ces puces Raptor Lake ont besoin du microcode 0x12B ou plus.",c:[Y("Via EZ Flash"),W("Avant un CPU 14e gén.")]},
        {n:"Changer de plateforme (DDR5)",p:"carte mère + CPU + RAM",d:"Il faudrait tout racheter avec une DDR5 hors de prix en 2026.",c:[N("DDR5 obligatoire"),W("Fixation AIO")],no:1}]},
  cpu:{num:3,cat:"Processeur",name:"Intel Core i5-13400F",spec:"10 cœurs (6P + 4E) / 16 threads · 4,6 GHz · sans iGPU · puce Alder Lake (microcode 0x35), non concernée par l'instabilité des 13e/14e gén.",st:"ok",
   ups:[{n:"Garder l'i5-13400F",p:"0 €",d:"Suffisant pour une carte graphique de niveau RX 9070 / RTX 5070 en 1440p.",c:[Y("Pas de goulot en 1440p")],best:1},
-       {n:"Intel Core i7-14700F",p:"dès ~350 €",d:"20 cœurs / 28 threads : gros gain en montage, rendu et multitâche, gain modéré en jeu.",c:[Y("LGA1700"),Y("Alim 650 W"),Y("AIO 240 OK"),W("BIOS à mettre à jour")]},
-       {n:"Intel Core i5-14600KF",p:"prix à vérifier",d:"14 cœurs / 20 threads, meilleur à haut FPS. Le « K » est inutile sur une B760.",c:[Y("LGA1700"),Y("Alim 650 W"),W("BIOS à mettre à jour")]}]},
+       {n:"Intel Core i7-14700F",q:"Intel Core i7-14700F",p:"dès ~350 €",d:"20 cœurs / 28 threads : gros gain en montage, rendu et multitâche, gain modéré en jeu.",c:[Y("LGA1700"),Y("Alim 650 W"),Y("AIO 240 OK"),W("BIOS à mettre à jour")]},
+       {n:"Intel Core i5-14600KF",q:"Intel Core i5-14600KF",p:"prix à vérifier",d:"14 cœurs / 20 threads, meilleur à haut FPS. Le « K » est inutile sur une B760.",c:[Y("LGA1700"),Y("Alim 650 W"),W("BIOS à mettre à jour")]}]},
  aio:{num:4,cat:"Watercooling AIO",name:"Corsair H100i Platinum · 240 mm",spec:"Radiateur 240 mm sur le dessus · 2 ventilateurs 120 mm RGB · piloté par iCUE",st:"ok",
   ups:[{n:"Régler les courbes dans iCUE",p:"gratuit",d:"Base la vitesse des ventilateurs sur la température du liquide : plus silencieux au quotidien.",c:[Y("iCUE")],best:1},
        {n:"Garder l'AIO",p:"0 €",d:"Il suffit pour l'i5 actuel comme pour un i7-14700F. Surveille les bruits de pompe : il date de 2018 environ.",c:[Y("LGA1700"),Y("i7-14700F")]},
-       {n:"AIO 360 mm en façade",p:"prix à vérifier",d:"Plus de silence sous forte charge, utile seulement avec un i7.",c:[W("Façade uniquement"),N("Remplace les 3 ventilos façade")],no:1}]},
+       {n:"AIO 360 mm en façade",q:"watercooling AIO 360 mm",p:"prix à vérifier",d:"Plus de silence sous forte charge, utile seulement avec un i7.",c:[W("Façade uniquement"),N("Remplace les 3 ventilos façade")],no:1}]},
  ram:{num:5,cat:"Mémoire vive",name:"Corsair Vengeance RGB Pro SL · 2 × 16 Go",spec:"DDR4-3600 CL18-22-22-42 · XMP actif · double canal (A2 + B2), vérifié avec CPU-Z",st:"ok",
   ups:[{n:"Garder la configuration actuelle",p:"0 €",d:"32 Go en double canal à 3600 MT/s : c'est la configuration optimale pour ta carte mère. Rien à changer pour jouer.",c:[Y("Double canal"),Y("XMP actif")],best:1},
-       {n:"Passer à 64 Go (2e kit identique)",p:"cher en 2026",d:"Seulement pour des VM ou du montage 4K lourd. 32 Go suffisent pour jouer.",c:[Y("DDR4"),W("Peut redescendre à 3200"),N("Prix gonflés")],no:1}]},
+       {n:"Passer à 64 Go (2e kit identique)",q:"Corsair Vengeance RGB Pro SL 32 Go DDR4 3600",p:"cher en 2026",d:"Seulement pour des VM ou du montage 4K lourd. 32 Go suffisent pour jouer.",c:[Y("DDR4"),W("Peut redescendre à 3200"),N("Prix gonflés")],no:1}]},
  gpu:{num:6,cat:"Carte graphique",name:"Gigabyte GeForce RTX 2060 · 6 Go",spec:"6 Go GDDR6 · sortie en 2019 · slot PCIe 5.0 x16",st:"prio",badge:"Plus gros gain",
   note:"C'est le maillon faible : 6 Go de mémoire vidéo, c'est juste pour les jeux récents. Limites de ta config : 250 W maximum (alim 650 W) et 370 mm de long (boîtier).",
-  ups:[{n:"NVIDIA RTX 5060 · 8 Go",p:"dès ~418 €",d:"Le choix dans ton budget d'environ 400 € : environ +70 à 80 % par rapport à ta RTX 2060, avec le DLSS 4 et la génération d'images. Neuve et garantie.",c:[Y("~145 W"),Y("Alim 650 W OK"),Y("Cartes courtes"),W("8 Go de VRAM")],best:1},
-       {n:"AMD Radeon RX 9070 · 16 Go",p:"dès ~750 €",d:"Meilleur rapport performances/prix entre 600 et 1 000 €. Environ 2,5 à 3 fois une RTX 2060.",c:[Y("~220 W"),Y("Alim 650 W OK"),W("Longueur ≤ 370 mm")]},
-       {n:"NVIDIA RTX 5070 · 12 Go",p:"dès ~880 €",d:"Proche de la RX 9070, avec le DLSS 4 et NVENC. Plus chère, et seulement 12 Go.",c:[Y("250 W"),Y("Alim 650 W OK"),Y("Adaptateur fourni")]},
-       {n:"NVIDIA RTX 5060 Ti · 16 Go",p:"dès ~650 €",d:"Environ 2 fois une RTX 2060, consomme peu. Le choix économique.",c:[Y("~180 W"),Y("Cartes courtes")]},
-       {n:"AMD Radeon RX 9070 GRE · 12 Go",p:"dès ~630 €",d:"Un cran sous la RX 9070, l'entrée la moins chère à ce niveau.",c:[Y("Alim 650 W OK")]},
-       {n:"RX 9070 XT / RTX 5070 Ti et plus",p:"dès ~910 €",d:"Plus puissantes, mais elles demandent une alim de 750 W.",c:[N("Alim trop juste")],no:1}]},
+  ups:[{n:"NVIDIA RTX 5060 · 8 Go",q:"GeForce RTX 5060 8 Go",p:"dès ~418 €",d:"Le choix dans ton budget d'environ 400 € : environ +70 à 80 % par rapport à ta RTX 2060, avec le DLSS 4 et la génération d'images. Neuve et garantie.",c:[Y("~145 W"),Y("Alim 650 W OK"),Y("Cartes courtes"),W("8 Go de VRAM")],best:1},
+       {n:"AMD Radeon RX 9070 · 16 Go",q:"Radeon RX 9070 16 Go",p:"dès ~750 €",d:"Meilleur rapport performances/prix entre 600 et 1 000 €. Environ 2,5 à 3 fois une RTX 2060.",c:[Y("~220 W"),Y("Alim 650 W OK"),W("Longueur ≤ 370 mm")]},
+       {n:"NVIDIA RTX 5070 · 12 Go",q:"GeForce RTX 5070 12 Go",p:"dès ~880 €",d:"Proche de la RX 9070, avec le DLSS 4 et NVENC. Plus chère, et seulement 12 Go.",c:[Y("250 W"),Y("Alim 650 W OK"),Y("Adaptateur fourni")]},
+       {n:"NVIDIA RTX 5060 Ti · 16 Go",q:"GeForce RTX 5060 Ti 16 Go",p:"dès ~650 €",d:"Environ 2 fois une RTX 2060, consomme peu. Le choix économique.",c:[Y("~180 W"),Y("Cartes courtes")]},
+       {n:"AMD Radeon RX 9070 GRE · 12 Go",q:"Radeon RX 9070 GRE",p:"dès ~630 €",d:"Un cran sous la RX 9070, l'entrée la moins chère à ce niveau.",c:[Y("Alim 650 W OK")]},
+       {n:"RX 9070 XT / RTX 5070 Ti et plus",q:"Radeon RX 9070 XT",p:"dès ~910 €",d:"Plus puissantes, mais elles demandent une alim de 750 W.",c:[N("Alim trop juste")],no:1}]},
  m2:{num:7,cat:"Slots M.2 NVMe",name:"3 slots PCIe 4.0 x4 · tous libres",spec:"M.2_1 relié au processeur (avec radiateur) · M.2_2 et M.2_3 via le chipset",st:"prio",badge:"Libres",
   note:"Windows tourne sur un SSD SATA de 240 Go. Un NVMe dans le slot M.2_1 est 10 à 13 fois plus rapide.",
-  ups:[{n:"WD Black SN7100 · 1 To",p:"dès ~172 €",d:"Très rapide, peu énergivore. Meilleur rapport qualité/prix du moment.",c:[Y("PCIe 4.0"),Y("2280"),Y("Slot M.2_1")],best:1},
-       {n:"Samsung 990 Pro · 1 To",p:"dès ~200 €",d:"La référence en PCIe 4.0, très endurant.",c:[Y("PCIe 4.0"),Y("2280")]},
-       {n:"Lexar NM790 · 1 To",p:"dès ~197 €",d:"Rapide, 1000 To d'endurance en écriture.",c:[Y("PCIe 4.0"),Y("2280")]}]},
+  ups:[{n:"WD Black SN7100 · 1 To",q:"WD Black SN7100 1 To",p:"dès ~172 €",d:"Très rapide, peu énergivore. Meilleur rapport qualité/prix du moment.",c:[Y("PCIe 4.0"),Y("2280"),Y("Slot M.2_1")],best:1},
+       {n:"Samsung 990 Pro · 1 To",q:"Samsung 990 Pro 1 To",p:"dès ~200 €",d:"La référence en PCIe 4.0, très endurant.",c:[Y("PCIe 4.0"),Y("2280")]},
+       {n:"Lexar NM790 · 1 To",q:"Lexar NM790 1 To",p:"dès ~197 €",d:"Rapide, 1000 To d'endurance en écriture.",c:[Y("PCIe 4.0"),Y("2280")]}]},
  ssd:{num:8,cat:"SSD SATA",name:"Crucial BX500 · 240 Go",spec:"SATA ~540 Mo/s · entrée de gamme sans DRAM · derrière la carte mère",st:"warn",badge:"À remplacer",
   ups:[{n:"Le remplacer par un SSD NVMe",p:"dès ~172 €",d:"Clone Windows sur un NVMe 1 To (Macrium Reflect ou Clonezilla), ou réinstalle proprement.",c:[Y("3 slots M.2 libres")],best:1,go:"m2"},
        {n:"Le garder en disque d'appoint",p:"0 €",d:"Une fois Windows déplacé, il sert pour des fichiers ou des jeux légers.",c:[Y("SATA")]}]},
  hdd:{num:9,cat:"Disque dur",name:"WD Black 1 To (WD1003FZEX)",spec:"3,5\" · 7200 tr/min · SATA · sous le cache alim",st:"ok",
   ups:[{n:"Vérifier sa santé",p:"gratuit",d:"Lance CrystalDiskInfo : tant qu'il affiche « Bon », garde-le pour le stockage et les sauvegardes.",c:[Y("Gratuit")],best:1},
-       {n:"SSD SATA 2 To pour le stockage",p:"prix à vérifier",d:"Plus rapide et silencieux, mais les SSD sont chers en 2026.",c:[Y("Port SATA libre"),N("Prix gonflés")],no:1}]},
+       {n:"SSD SATA 2 To pour le stockage",q:"SSD SATA 2 To",p:"prix à vérifier",d:"Plus rapide et silencieux, mais les SSD sont chers en 2026.",c:[Y("Port SATA libre"),N("Prix gonflés")],no:1}]},
  psu:{num:10,cat:"Alimentation",name:"Corsair TX650M · 650 W",spec:"80 Plus Gold · semi-modulaire · PCIe 6+2 broches",st:"ok",
   ups:[{n:"Garder la TX650M",p:"0 €",d:"Compatible avec une RX 9070 ou une RTX 5070 (~450 W en charge au total).",c:[Y("RX 9070"),Y("RTX 5070"),N("9070 XT / 5070 Ti")],best:1},
-       {n:"Alim 750–850 W ATX 3.1",p:"prix à vérifier",d:"Seulement pour une carte graphique de 300 W ou plus. Connecteur 12V-2x6 natif.",c:[Y("≤ 225 mm dans le boîtier")],no:1}]},
+       {n:"Alim 750–850 W ATX 3.1",q:"alimentation 850W ATX 3.1 80 Plus Gold",p:"prix à vérifier",d:"Seulement pour une carte graphique de 300 W ou plus. Connecteur 12V-2x6 natif.",c:[Y("≤ 225 mm dans le boîtier")],no:1}]},
  frontfans:{num:11,cat:"Ventilateurs façade",name:"3 × Corsair SP120 RGB",spec:"120 mm en entrée d'air · RGB via le contrôleur du boîtier",st:"ok",
   ups:[{n:"Les garder",p:"0 €",d:"Suffisants, avec le SP120 RGB PRO en extraction à l'arrière.",c:[Y("120 mm")],best:1},
-       {n:"Ventilateurs haute pression statique",p:"prix à vérifier",d:"Plus efficaces et plus silencieux derrière une façade vitrée.",c:[Y("3 × 120 mm"),W("RGB à vérifier")],no:1}]},
+       {n:"Ventilateurs haute pression statique",q:"ventilateur 120 mm pression statique RGB",p:"prix à vérifier",d:"Plus efficaces et plus silencieux derrière une façade vitrée.",c:[Y("3 × 120 mm"),W("RGB à vérifier")],no:1}]},
  rearfan:{num:12,cat:"Ventilateur arrière",name:"Corsair iCUE SP120 RGB PRO",spec:"120 mm · 52 CFM · 8 LED RGB adressables · en extraction (CO-9050093-WW)",st:"ok",
   ups:[{n:"Le garder",p:"0 €",d:"Il évacue l'air chaud vers l'arrière. Avec l'entrée d'air en façade et le radiateur en sortie sur le dessus, le flux d'air est complet.",c:[Y("120 mm"),Y("Extraction")],best:1},
-       {n:"Piloter son éclairage dans iCUE",p:"prix à vérifier",d:"Il n'apparaît pas dans iCUE : son RGB doit passer par un contrôleur Corsair (Lighting Node CORE ou Commander) branché sur un port USB interne.",c:[Y("USB 2.0 interne libre"),W("Hub Corsair requis")]}]}
+       {n:"Piloter son éclairage dans iCUE",q:"Corsair iCUE Lighting Node CORE",p:"prix à vérifier",d:"Il n'apparaît pas dans iCUE : son RGB doit passer par un contrôleur Corsair (Lighting Node CORE ou Commander) branché sur un port USB interne.",c:[Y("USB 2.0 interne libre"),W("Hub Corsair requis")]}]}
 };
 const ORDER=["case","mobo","cpu","aio","ram","gpu","m2","ssd","hdd","psu","frontfans","rearfan"];
 const STC={ok:["b-ok","OK"],warn:["b-warn","À vérifier"],prio:["b-prio","À améliorer"]};
@@ -66,11 +66,11 @@ function show(id){
    <div class="cur"><p class="cur-l">Composant actuel</p><h2>${esc(p.name)}</h2><p class="spec">${esc(p.spec)}</p></div>
    ${p.note?`<p class="note">${esc(p.note)}</p>`:''}</div><div class="pc2">
    <h3>Améliorations possibles</h3>
-   <ul class="ups">${p.ups.map(u=>`<li class="up${u.best?' best':''}${u.no?' no':''}">
+   <ul class="ups">${p.ups.map(u=>`<li class="up${u.best?' best':''}${u.no?' no':''}${u.q?' shop':''}">
       ${u.best?'<span class="tagbest">Conseillé</span>':''}
       <div class="up-h"><b>${esc(u.n)}</b><span class="price">${esc(u.p)}</span></div>
       <p>${esc(u.d)}</p>
-      <div class="chips">${u.c.map(([t,x])=>`<span class="chip ${t}">${t==='y'?'✓':t==='n'?'✕':'!'} ${esc(x)}</span>`).join('')}</div>
+      <div class="chips">${u.c.map(([t,x])=>`<span class="chip ${t}">${t==='y'?'✓':t==='n'?'✕':'!'} ${esc(x)}</span>`).join('')}${u.q?`<a class="buy" href="https://www.idealo.fr/prechcat.html?q=${encodeURIComponent(u.q)}" target="_blank" rel="noopener noreferrer" title="Comparer les prix neufs sur idealo (nouvel onglet)">Meilleur prix neuf ↗</a>`:''}</div>
       ${u.go?`<div><button class="golink" data-go="${u.go}">Voir ${esc(PARTS[u.go].cat)} →</button></div>`:''}
    </li>`).join('')}</ul></div>`;
   plist.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.go===selected?'true':'false'));
