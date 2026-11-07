@@ -318,12 +318,15 @@
     const list = parseImport(raw, $("importPlat").value);
     if (!list.length) { toast("Colle d'abord ta liste de jeux"); return; }
     const status = $("importStatus").value;
+    // Faux jeux laissés par l'ancien favori (le lien « Page du magasin » de Steam pris pour un titre)
+    const junk = /^(page du magasin|store page|succès|achievements)$/i;
+    items = items.filter((g) => !junk.test(cleanTitle(g.title)));
     const byKey = new Map(items.map((g) => [keyOf(g.title) + "|" + g.platform, g]));
     let added = 0, updated = 0;
     const fresh = [];
     for (const g of list) {
       const k = keyOf(g.title) + "|" + g.platform;
-      if (!keyOf(g.title)) continue;
+      if (!keyOf(g.title) || junk.test(g.title)) continue;
       const old = byKey.get(k);
       if (old) {
         const patch = {};
@@ -343,7 +346,9 @@
     render();
     $("importText").value = "";
     $("importBox").open = false;
-    toast(added || updated ? `${added} jeu${added > 1 ? "x" : ""} ajouté${added > 1 ? "s" : ""}${updated ? ` · ${updated} mis à jour` : ""}` : "Tous ces jeux sont déjà là");
+    const s = (n, w) => `${n} ${w}${n > 1 ? "x" : ""}`;
+    toast(added && updated ? `${s(added, "jeu")} ajouté${added > 1 ? "s" : ""} · ${updated} mis à jour`
+      : added ? `${s(added, "jeu")} ajouté${added > 1 ? "s" : ""}` : updated ? `${s(updated, "jeu")} mis à jour` : "Tous ces jeux sont déjà là");
     fillCovers();   // jaquettes manquantes cherchées sur Wikipédia, une à une
   });
 
@@ -374,15 +379,59 @@
       const tpl = document.querySelector("[data-profile-gameslist]");
       if (tpl) { try { list = JSON.parse(tpl.getAttribute("data-profile-gameslist")).rgGames; } catch (e) {} }
       if (!list && Array.isArray(window.rgGames)) list = window.rgGames;
+      if (!list) {
+        show("(lecture de ton compte Steam…)");
+        try {
+          const cfg = document.getElementById("application_config");
+          const token = cfg && JSON.parse(cfg.getAttribute("data-loyalty_webapi_token") || "null");
+          const info = cfg && JSON.parse(cfg.getAttribute("data-userinfo") || "null");
+          const sid = (info && info.steamid) || (location.pathname.match(/\\/profiles\\/(\\d{17})/) || [])[1] || window.g_steamID;
+          if (token && sid) {
+            const r = await fetch("https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?access_token=" + encodeURIComponent(token) + "&steamid=" + encodeURIComponent(sid) + "&include_appinfo=true&include_played_free_games=true");
+            const j = await r.json();
+            if (j && j.response && Array.isArray(j.response.games) && j.response.games.length) list = j.response.games;
+          }
+        } catch (e) {}
+      }
+      if (!list) {
+        const html = document.documentElement.innerHTML.replace(/&quot;/g, '"');
+        const found = [...html.matchAll(/"appid":(\\d+),"name":"((?:[^"\\\\]|\\\\.)*)"[^{}]*?"playtime_forever":(\\d+)/g)];
+        if (found.length) list = found.map((m) => { let name = m[2]; try { name = JSON.parse('"' + m[2] + '"'); } catch (e) {} return { appid: +m[1], name, playtime_forever: +m[3] }; });
+      }
       if (list) for (const g of list) add(g.name, "PC", Math.round((g.playtime_forever || 0) / 6) / 10, g.appid ? steamCover(g.appid) : "");
     }
+    const rows = new Map();
+    const hoursIn = (text) => {
+      let best = 0;
+      for (const m of text.matchAll(/(\\d[\\d\\s.,]*?)\\s*(h|hrs?|heures?|hours?)(?![a-z])/gi)) {
+        let s = m[1].replace(/\\s/g, "");
+        s = /,\\d{1,2}$/.test(s) ? s.replace(/\\./g, "").replace(",", ".") : s.replace(/,/g, "");
+        const v = parseFloat(s);
+        if (isFinite(v) && v > best) best = v;
+      }
+      if (!best) { const mm = text.match(/(\\d+)\\s*min/i); if (mm) best = Math.round(+mm[1] / 6) / 10; }
+      return best;
+    };
     if (!list) {
       const collect = () => {
         if (steam) {
           for (const a of document.querySelectorAll("a[href*='/app/']")) {
-            const id = (a.href.match(/\\/app\\/(\\d+)/) || [])[1], t = a.textContent.trim();
-            if (id && t && t.length > 1) add(t, "PC", 0, steamCover(id));
+            const id = (a.href.match(/\\/app\\/(\\d+)/) || [])[1];
+            if (!id) continue;
+            const r = rows.get(id) || { texts: [], h: 0, el: null };
+            const t = a.textContent.replace(/\\s+/g, " ").trim();
+            if (t && !r.texts.includes(t)) r.texts.push(t);
+            if (!r.el || !r.el.isConnected) {
+              let el = a;
+              const other = (p) => [...p.querySelectorAll("a[href*='/app/']")].some((x) => (x.href.match(/\\/app\\/(\\d+)/) || [])[1] !== id);
+              while (el.parentElement && el.parentElement !== document.body && !other(el.parentElement)) el = el.parentElement;
+              r.el = el;
+            }
+            const h = hoursIn(r.el.innerText || "");
+            if (h > r.h) r.h = h;
+            rows.set(id, r);
           }
+          box.textContent = "Mon QG : " + rows.size + " jeux trouvés… (défilement)";
           return;
         }
         for (const img of document.images) {
@@ -396,11 +445,14 @@
       for (let pageNo = 1; pageNo <= 60; pageNo++) {
         let still = 0, last = -1;
         for (let i = 0; i < 120 && still < 6; i++) {
-          collect(); show("(page " + pageNo + ", défilement…)");
+          if (!steam) show("(page " + pageNo + ", défilement…)");
+          collect();
           window.scrollTo(0, document.documentElement.scrollHeight);
           await wait(600);
-          if (games.size === last) still++; else { still = 0; last = games.size; }
+          const n = steam ? rows.size : games.size;
+          if (n === last) still++; else { still = 0; last = n; }
         }
+        if (steam) break;
         const next = [...document.querySelectorAll("button, a")].find((b) => /suivant|next/i.test((b.getAttribute("aria-label") || "") + " " + (b.getAttribute("data-qa") || "") + " " + b.textContent.trim()) && !b.disabled && b.getAttribute("aria-disabled") !== "true" && b.offsetParent);
         if (!next) break;
         const before = games.size;
@@ -408,6 +460,15 @@
         await wait(2500);
         collect();
         if (games.size === before) { await wait(2000); collect(); if (games.size === before) break; }
+      }
+    }
+    if (rows.size) {
+      const freq = new Map();
+      for (const r of rows.values()) for (const t of r.texts) freq.set(t, (freq.get(t) || 0) + 1);
+      const label = /^(page du magasin|store page|succès|achievements|statistiques|stats|guides?|communauté|community|centre de la communauté|community hub|discussions|captures d'écran|screenshots|vidéos|videos|dlc|jouer|play|installer|install|télécharger|download|\\d+ ?%)$/i;
+      for (const [id, r] of rows) {
+        const t = r.texts.find((s) => s.length > 1 && freq.get(s) === 1 && !label.test(s)) || r.texts.find((s) => s.length > 1 && !label.test(s));
+        if (t) add(t, "PC", r.h, steamCover(id));
       }
     }
     box.remove();
