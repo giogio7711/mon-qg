@@ -53,6 +53,18 @@ const PARTS={
 const ORDER=["case","mobo","cpu","aio","ram","gpu","m2","ssd","hdd","psu","frontfans","rearfan"];
 const STC={ok:["b-ok","OK"],warn:["b-warn","À vérifier"],prio:["b-prio","À améliorer"]};
 const DOT={ok:"var(--ok)",warn:"var(--warn)",prio:"var(--accent)"};
+// Boutiques les plus visitées en France : chaque lien ouvre la recherche du modèle sur le site
+const cd=q=>q.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'+').replace(/^\+|\+$/g,'');
+const SHOPS=[
+  ["Amazon",q=>"https://www.amazon.fr/s?k="+encodeURIComponent(q)],
+  ["LDLC",q=>"https://www.ldlc.com/recherche/"+encodeURIComponent(q)+"/"],
+  ["Cdiscount",q=>"https://www.cdiscount.com/search/10/"+cd(q)+".html"],
+  ["Materiel.net",q=>"https://www.materiel.net/recherche/"+encodeURIComponent(q)+"/"],
+  ["Fnac",q=>"https://www.fnac.com/SearchResult/ResultList.aspx?Search="+encodeURIComponent(q)],
+  ["Boulanger",q=>"https://www.boulanger.com/resultats?tr="+encodeURIComponent(q)],
+  ["Carrefour",q=>"https://www.carrefour.fr/s?q="+encodeURIComponent(q)],
+  ["Darty",q=>"https://www.darty.com/nav/recherche?text="+encodeURIComponent(q)]
+];
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 /* ---------- Panneau ---------- */
@@ -70,12 +82,21 @@ function show(id){
       ${u.best?'<span class="tagbest">Conseillé</span>':''}
       <div class="up-h"><b>${esc(u.n)}</b><span class="price">${esc(u.p)}</span></div>
       <p>${esc(u.d)}</p>
-      <div class="chips">${u.c.map(([t,x])=>`<span class="chip ${t}">${t==='y'?'✓':t==='n'?'✕':'!'} ${esc(x)}</span>`).join('')}${u.q?`<a class="buy" href="https://www.idealo.fr/prechcat.html?q=${encodeURIComponent(u.q)}" target="_blank" rel="noopener noreferrer" title="Comparer les prix neufs sur idealo (nouvel onglet)">Meilleur prix neuf ↗</a>`:''}</div>
+      <div class="chips">${u.c.map(([t,x])=>`<span class="chip ${t}">${t==='y'?'✓':t==='n'?'✕':'!'} ${esc(x)}</span>`).join('')}${u.q?`<button type="button" class="buy" aria-expanded="false">Où l'acheter ▾</button>`:''}</div>
+      ${u.q?`<div class="shops" hidden>${SHOPS.map(([nom,url])=>`<a href="${esc(url(u.q))}" target="_blank" rel="noopener noreferrer">${nom} ↗</a>`).join('')}</div>`:''}
       ${u.go?`<div><button class="golink" data-go="${u.go}">Voir ${esc(PARTS[u.go].cat)} →</button></div>`:''}
    </li>`).join('')}</ul></div>`;
   plist.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.go===selected?'true':'false'));
 }
 document.addEventListener('click',e=>{const t=e.target.closest('[data-go]');if(t){select(t.dataset.go)}});
+// Un clic sur une suggestion achetable ouvre ou ferme la liste des boutiques (une seule ouverte à la fois)
+pbody.addEventListener('click',e=>{
+  if(e.target.closest('.shops a')) return;
+  const li=e.target.closest('.up.shop'); if(!li) return;
+  const open=!li.classList.contains('open');
+  pbody.querySelectorAll('.up.open').forEach(x=>{x.classList.remove('open');x.querySelector('.shops').hidden=true;x.querySelector('.buy').setAttribute('aria-expanded','false')});
+  if(open){li.classList.add('open');li.querySelector('.shops').hidden=false;li.querySelector('.buy').setAttribute('aria-expanded','true');li.scrollIntoView({block:'nearest'})}
+});
 
 /* ---------- 3D ---------- */
 const canvas=document.getElementById('c'),stage=canvas.parentElement,tip=document.getElementById('tip');

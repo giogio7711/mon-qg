@@ -70,9 +70,14 @@ body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15
 /* Suggestion achetable : toute la carte est cliquable (le lien s'étend dessus) */
 .up.shop{position:relative;cursor:pointer;transition:border-color .15s,transform .15s}
 .up.shop:hover{border-color:rgba(255,59,78,.6)}
-.buy{margin-left:auto;white-space:nowrap;font-size:12px;font-weight:600;color:var(--accent);text-decoration:none}
-.buy::after{content:"";position:absolute;inset:0;border-radius:inherit}
+.buy{all:unset;margin-left:auto;white-space:nowrap;font-size:12px;font-weight:600;color:var(--accent);cursor:pointer}
+.buy:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
 .up.shop:hover .buy{text-decoration:underline}
+.up.open{border-color:var(--accent)}
+.shops{display:flex;flex-wrap:wrap;gap:6px;padding-top:4px}
+.shops[hidden]{display:none}
+.shops a{font-size:12px;font-weight:600;color:var(--fg);text-decoration:none;padding:4px 11px;border-radius:99px;border:1px solid var(--line2);background:rgba(255,255,255,.04)}
+.shops a:hover{border-color:var(--accent);background:var(--accent-soft)}
 .golink{all:unset;cursor:pointer;color:var(--accent);font-size:12.5px}
 .list{border-top:1px solid var(--line);padding:12px 14px;display:flex;flex-wrap:wrap;gap:6px}
 .list button{font:500 12px var(--f-body);color:var(--muted);background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:99px;padding:4px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:color .15s,border-color .15s}
