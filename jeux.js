@@ -310,6 +310,8 @@
     }
     // Toute la page « Tous les jeux » de Steam copiée (Ctrl+A, Ctrl+C) : titres et temps de jeu
     if (STEAM_PAGE.test(raw)) { const list = parseSteamPage(raw); if (list.length) return list; }
+    // Toute la page « Bibliothèque de jeux » PlayStation copiée : chaque titre est suivi de « PS5 » ou « PS4 »
+    { const list = parsePsPage(raw); if (list.length) return list; }
     // Une liste tapée ou collée : un titre par ligne (puces et numéros retirés)
     return raw.split(/\r?\n/).map((l) => cleanTitle(l.replace(/^\s*(?:[-*•·]|\d+[.)])\s+/, "")))
       .filter((t) => t && /[a-z0-9]/i.test(t) && !LABEL.test(t) && !TIME.test(t)).map((title) => ({ title, platform: plat, hours: 0, cover: "" }));
@@ -332,6 +334,24 @@
     }
     const mm = text.match(/(\d+)\s*min/i);
     return mm ? Math.round(+mm[1] / 6) / 10 : 0;
+  }
+
+  const PS_BADGE = /^(PS4|PS5)(\s*[\/,·|]?\s*(PS4|PS5))?$/i;
+  const PS_LABEL = /^(PS[45]|PS VR2?|Boutique|Jeux|Accessoires|Actualités|Assistance|PS Plus|Rechercher|Connexion|Bibliothèque de jeux|Game Library|Acheté\(s\)|Achetés?|Purchased|Votre collection|Ta collection|Télécharger|Download|Ajouter à la file d'attente|Installé|Installed|Gratuit|Free|Jeu|Game|Trier|Filtrer|\d+ ?%|\d+|[<>‹›«»]|Store|Games|Accessories|News|Support)$/i;
+  function parsePsPage(raw) {
+    const lines = raw.split(/\r?\n/).map((l) => l.replace(/[\s  ]+/g, " ").trim()).filter(Boolean);
+    const out = [], seen = new Set();
+    lines.forEach((l, i) => {
+      if (!PS_BADGE.test(l)) return;
+      let title = "";
+      for (let j = i - 1; !title && j >= 0 && j >= i - 3; j--) if (!PS_LABEL.test(lines[j]) && !PS_BADGE.test(lines[j])) title = cleanTitle(lines[j]);
+      const k = keyOf(title);
+      if (!title || title.length < 2 || seen.has(k)) return;
+      seen.add(k);
+      out.push({ title, platform: /PS5/i.test(l) ? "PS5" : "PS4", hours: 0, cover: "" });
+    });
+    // Au moins 2 jeux pour être sûr que c'est bien la bibliothèque (et pas un titre isolé « PS5 »)
+    return out.length >= 2 ? out : [];
   }
 
   function parseSteamPage(raw) {
@@ -531,6 +551,13 @@
           }
         }
         if (games.size) return;
+        const lines = (document.body.innerText || "").split("\\n").map((s) => s.replace(/\\s+/g, " ").trim()).filter(Boolean);
+        lines.forEach((l, i) => {
+          if (!/^PS[45]$/.test(l)) return;
+          for (let j = i - 1; j >= 0 && j >= i - 3; j--) if (!LBL.test(lines[j]) && !/^(Boutique|Jeux|Accessoires|Actualités|Assistance|Rechercher|Connexion|[<>‹›])$/i.test(lines[j])) { add(lines[j], l, 0, ""); break; }
+        });
+        if (games.size >= 2) return;
+        games.clear();
         for (const img of document.images) {
           if (!/playstation\\.(com|net)/.test(img.currentSrc || img.src) || img.getBoundingClientRect().width < 60) continue;
           const tile = img.closest("a, li, [role=listitem], [data-qa]") || img.parentElement;
