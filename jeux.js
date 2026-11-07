@@ -315,7 +315,7 @@
       .filter((t) => t && /[a-z0-9]/i.test(t) && !LABEL.test(t) && !TIME.test(t)).map((title) => ({ title, platform: plat, hours: 0, cover: "" }));
   }
 
-  const STEAM_PAGE = /temps de jeu total|total played|mes stats de jeu|my game stats|mon contenu de jeu/i;
+  const STEAM_PAGE = /temps de jeu|total played|playtime|heures de jeu|mes stats de jeu|my game stats|mon contenu de jeu/i;
   // Boutons affichés sous chaque jeu : ils ferment le bloc d'un jeu
   const BLOCK_END = /^(mes stats de jeu|mon contenu de jeu|my game stats|my game content|stats de jeu|contenu de jeu)$/i;
   // Intitulés et textes de la page qui ne sont pas des jeux
@@ -357,13 +357,35 @@
     }
     // Le bas de la page (sans boutons de jeu) ne compte que s'il contient un temps de jeu
     if (block.some((l) => /^(temps de jeu total|total played)\b/i.test(l))) flush();
-    return out;
+    // Deuxième lecture, sans compter sur les boutons : chaque « Temps de jeu total » donne ses heures,
+    // que le nombre soit sur la même ligne, juste après ou juste avant l'intitulé (selon la copie de Chrome)
+    const HAS_H = /\d\s*(heures?|h|hrs?|hours?|minutes?|min)(?![a-z])/i;
+    const skip = (l) => LABEL.test(l) || TIME.test(l) || BLOCK_END.test(l) || /^(temps de jeu total|total played|dernier lancement|last played|succès|achievements)\b/i.test(l);
+    const found = new Map();
+    lines.forEach((l, i) => {
+      const lab = l.match(/^(.*?)(temps de jeu(?: total)?|total played|playtime|heures de jeu)\s*:?\s*(.*)$/i);
+      if (!lab) return;
+      const next = lines[i + 1] || "", prev = lines[i - 1] || "";
+      const src = HAS_H.test(lab[3]) ? lab[3] : HAS_H.test(next) && TIME.test(next) ? next : HAS_H.test(prev) && TIME.test(prev) ? prev : "";
+      const hours = src ? hoursOf(src) : 0;
+      // Titre : sur la même ligne avant l'intitulé, sinon la première vraie ligne en remontant
+      let title = cleanTitle(lab[1]);
+      for (let j = i - 1; !title && j >= 0 && j >= i - 4; j--) if (!skip(lines[j])) title = cleanTitle(lines[j]);
+      if (title && title.length > 1 && !found.has(keyOf(title))) found.set(keyOf(title), { title, platform: "PC", hours, cover: "" });
+    });
+    // On garde les deux lectures : les heures trouvées l'emportent, les jeux jamais lancés restent
+    for (const g of out) {
+      const f = found.get(keyOf(g.title));
+      if (f) { g.hours = Math.max(g.hours, f.hours); found.delete(keyOf(g.title)); }
+    }
+    return [...out, ...found.values()];
   }
 
   $("importBtn").addEventListener("click", () => {
     const raw = $("importText").value;
     const list = parseImport(raw, $("importPlat").value);
     if (!list.length) { toast("Colle d'abord ta liste de jeux"); return; }
+    const steamNoHours = /temps de jeu|total played|playtime/i.test(raw) && !list.some((g) => g.hours > 0);
     const status = $("importStatus").value;
     // Faux jeux laissés par l'ancien favori (le lien « Page du magasin » de Steam pris pour un titre)
     const junk = /^(page du magasin|store page|succès|achievements)$/i;
@@ -395,7 +417,8 @@
     $("importBox").open = false;
     const s = (n, w) => `${n} ${w}${n > 1 ? "x" : ""}`;
     toast(added && updated ? `${s(added, "jeu")} ajouté${added > 1 ? "s" : ""} · ${updated} mis à jour`
-      : added ? `${s(added, "jeu")} ajouté${added > 1 ? "s" : ""}` : updated ? `${s(updated, "jeu")} mis à jour` : "Tous ces jeux sont déjà là");
+      : added ? `${s(added, "jeu")} ajouté${added > 1 ? "s" : ""}` : updated ? `${s(updated, "jeu")} mis à jour`
+      : steamNoHours ? "Heures introuvables dans le texte collé" : "Tous ces jeux sont déjà là");
     fillCovers();   // jaquettes manquantes cherchées sur Wikipédia, une à une
   });
 
