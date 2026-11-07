@@ -126,10 +126,13 @@ nav button .dot { min-width: 20px; height: 20px; border-radius: 10px; background
   @keyframes power-on { 0% { opacity: 0; transform: translateY(10px) scale(.98); } 60% { opacity: 1; } 100% { opacity: 1; transform: none; } }
 }
 @media (max-width: 900px) { .home { grid-template-columns: 1fr; } }
+/* Téléphone : 1re ligne logo + ⟳ + compte, 2e ligne les onglets sur toute la largeur */
 @media (max-width: 560px) {
   :root { --bar: 108px; }
-  .bar .wrap { flex-direction: column; align-items: flex-start; justify-content: center; gap: 6px; }
-  nav { width: 100%; }
+  .bar .wrap { flex-wrap: wrap; align-content: center; gap: 6px 10px; }
+  nav { order: 10; flex: 0 0 100%; width: 100%; gap: 4px; }
+  nav button { padding: 6px 7px; font-size: 13px; gap: 4px; flex: 1 0 auto; justify-content: center; }
+  nav button .dot { min-width: 16px; height: 16px; font-size: 10px; padding: 0 4px; }
 }
 /* Compte, synchro et écran de connexion */
 .bar .wrap { padding-right: max(16px, env(safe-area-inset-right, 0px)); }
@@ -162,7 +165,7 @@ nav button .dot { min-width: 20px; height: 20px; border-radius: 10px; background
 .login-box .err { color: var(--stop); font-weight: 700; }
 .login-box small { color: var(--muted); }
 .btn.big { padding: 12px 22px; font-size: 16px; }
-@media (max-width: 560px) { .sync { display: none; } .refresh { margin-left: auto; } }
+@media (max-width: 560px) { .sync { display: none; } .refresh { margin-left: auto; } .refresh, .me { width: 34px; height: 34px; } }
 /* Partage en lecture seule */
 .share { position: fixed; z-index: 45; top: calc(var(--bar) + 8px); right: 16px; width: min(420px, calc(100% - 32px)); background: var(--panel2); border: 1px solid var(--cyan); border-radius: 16px;
   padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 0 30px -8px var(--cyan); }
@@ -216,7 +219,7 @@ html.visite .backup, html.visite #userBtn, html.visite #userMenu, html.visite #s
   </div>
 </div>
 
-<div class="visit" id="visitBar" hidden role="status"><div class="wrap"><span id="visitTxt">QG partagé</span><small>Lecture seule : tu peux tout regarder et cliquer, rien n'est enregistré.</small></div></div>
+<div class="visit" id="visitBar" hidden role="status"><div class="wrap"><span id="visitTxt">QG partagé</span><small>Lecture seule : tu peux tout regarder, mais rien modifier.</small></div></div>
 
 <div class="menu" id="userMenu" hidden>
   <p id="userName"></p>
@@ -228,7 +231,7 @@ html.visite .backup, html.visite #userBtn, html.visite #userMenu, html.visite #s
 <div class="share" id="sharePanel" hidden role="dialog" aria-labelledby="shareTitle">
   <button class="x" id="shareClose" type="button" aria-label="Fermer">✕</button>
   <h2 id="shareTitle">Partager mon QG</h2>
-  <p class="muted">La personne qui a le lien voit les onglets cochés, en direct, sans se connecter. Elle peut tout regarder et cliquer, mais rien n'est modifié chez toi.</p>
+  <p class="muted">La personne qui a le lien voit les onglets cochés, en direct, sans se connecter. Elle peut tout regarder et naviguer, mais sans boutons pour modifier.</p>
   <fieldset>
     <legend>Onglets à montrer</legend>
     <label><input type="checkbox" name="shareTab" value="mangas"> Mangas</label>
