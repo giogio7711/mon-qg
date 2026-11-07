@@ -504,6 +504,33 @@
           box.textContent = "Mon QG : " + rows.size + " jeux trouvés… (défilement)";
           return;
         }
+        const LBL = /^(PS[45]|PS VR2?|Jeu|Game|Acheté\\(s\\)|Achetés?|Purchased|Gratuit|Free|Télécharger|Download|Installé|Installed|Ajouter à la file d'attente|PS Plus|Bibliothèque de jeux|Game Library|\\d+ ?%|\\d+)$/i;
+        const textsOf = (root) => { const out = [], w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) { const s = n.nodeValue.replace(/\\s+/g, " ").trim(); if (s && n.parentElement && !/^(SCRIPT|STYLE|NOSCRIPT)$/.test(n.parentElement.tagName)) out.push(s); } return out; };
+        const roots = [document];
+        for (const el of document.querySelectorAll("*")) if (el.shadowRoot) roots.push(el.shadowRoot);
+        for (const root of roots) {
+          const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+          let n;
+          while ((n = w.nextNode())) {
+            const badge = n.nodeValue.trim();
+            if (!/^PS[45]$/.test(badge) || !n.parentElement) continue;
+            let row = n.parentElement, title = null;
+            for (let d = 0; d < 7 && row && row !== document.body; d++) {
+              title = textsOf(row).find((s) => s.length > 1 && s.length <= 140 && !LBL.test(s));
+              if (title) break;
+              row = row.parentElement;
+            }
+            if (!title) continue;
+            const all = textsOf(row);
+            const badges = (el) => textsOf(el).filter((s) => /^PS[45]$/.test(s)).length;
+            let box2 = row;
+            for (let d = 0; d < 5 && !box2.querySelector("img") && box2.parentElement && box2.parentElement !== document.body && badges(box2.parentElement) <= badges(row); d++) box2 = box2.parentElement;
+            const img = box2.querySelector("img");
+            const src = img ? (img.currentSrc || img.src || "") : "";
+            add(title, all.includes("PS5") ? "PS5" : badge, 0, /^https:/.test(src) ? src : "");
+          }
+        }
+        if (games.size) return;
         for (const img of document.images) {
           if (!/playstation\\.(com|net)/.test(img.currentSrc || img.src) || img.getBoundingClientRect().width < 60) continue;
           const tile = img.closest("a, li, [role=listitem], [data-qa]") || img.parentElement;
