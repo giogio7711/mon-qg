@@ -75,6 +75,11 @@ nav button .dot { min-width: 20px; height: 20px; border-radius: 10px; background
 .home .box:nth-child(1) { --acc: var(--red); }
 .home .box:nth-child(2) { --acc: var(--violet); }
 .home .box:nth-child(3) { --acc: var(--blue); }
+/* Mon PC : bande sur toute la largeur, sous les trois cases */
+.home .box.pc { --acc: var(--cyan); grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto; align-items: center; gap: 12px 22px; }
+.home .box.pc h2 { grid-column: 1 / -1; }
+.home .box.pc .go { margin-top: 0; }
+@media (max-width: 900px) { .home .box.pc { grid-template-columns: 1fr; } }
 .box:hover { border-color: color-mix(in srgb, var(--acc) 55%, var(--line)); }
 .box h2 { margin: 0; font-family: var(--font-display); font-weight: 900; font-size: 18px; letter-spacing: .1em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
 .box h2 span { font-family: var(--font-body); font-weight: 700; font-size: 13px; letter-spacing: .02em; color: var(--acc); text-shadow: 0 0 8px var(--acc); }
@@ -167,6 +172,7 @@ nav button .dot { min-width: 20px; height: 20px; border-radius: 10px; background
       <button type="button" data-tab="mangas">Mangas <span class="dot" id="dot-mangas" hidden></span></button>
       <button type="button" data-tab="jeux">Jeux</button>
       <button type="button" data-tab="streams">Streams <span class="dot" id="dot-streams" hidden></span></button>
+      <button type="button" data-tab="pc">PC</button>
     </nav>
     <span class="sync" id="syncState" aria-live="polite"></span>
     <button class="refresh" id="refreshBtn" type="button" title="Actualiser" aria-label="Actualiser l'appli"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></button>

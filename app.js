@@ -1,5 +1,5 @@
 (() => {
-  const PAGES = { mangas: "mangatheque.html", jeux: "jeux.html", streams: "streams.html" };
+  const PAGES = { mangas: "mangatheque.html", jeux: "jeux.html", streams: "streams.html", pc: "pc.html" };
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const num = (v) => (typeof v === "number" && isFinite(v) ? v : null);
@@ -131,10 +131,35 @@
     </div>`;
   }
 
+  // Dernier bilan de Etat-PC.ps1 (chargé depuis l'onglet PC)
+  function pcBox() {
+    const r = loadJson("qg-pc", null);
+    if (!r || typeof r.date !== "number" || !Array.isArray(r.checks)) {
+      return `<div class="box pc" style="--i:3"><h2>Mon PC <span aria-hidden="true">パソコン</span></h2>
+        <p class="muted">Aucun bilan pour l'instant : lance Etat-PC.bat sur ton PC, puis ouvre l'onglet PC.</p>
+        <button class="btn go" type="button" data-tab="pc">Ouvrir mon PC →</button></div>`;
+    }
+    const n = (e) => r.checks.filter((c) => c && c.etat === e).length;
+    const crit = n("crit"), warn = n("warn");
+    const days = Math.floor((Date.now() - r.date) / 86400000);
+    const todo = r.checks.filter((c) => c && (c.etat === "crit" || c.etat === "warn")).slice(0, 3);
+    return `<div class="box pc" style="--i:3">
+      <h2>Mon PC <span aria-hidden="true">パソコン</span></h2>
+      <div class="nums">
+        <div class="n${crit ? " hot" : ""}"><b>${crit}</b><small>Urgent</small></div>
+        <div class="n${warn ? " hot" : ""}"><b>${warn}</b><small>À faire</small></div>
+        <div class="n${days >= 8 ? " hot" : ""}"><b>${days}</b><small>Jours depuis le bilan</small></div>
+      </div>
+      ${todo.length ? `<ul class="list">${todo.map((c) => `<li><span class="t">${esc(c.nom)}</span><span class="r${c.etat === "crit" ? " hot" : ""}">${c.etat === "crit" ? "urgent" : "à faire"}</span></li>`).join("")}</ul>`
+        : `<p class="muted">Tout est en ordre${days >= 8 ? ", mais le bilan est ancien : relance Etat-PC.bat." : "."}</p>`}
+      <button class="btn go" type="button" data-tab="pc">Ouvrir mon PC →</button>
+    </div>`;
+  }
+
   function renderHome() {
     const home = $("home");
     if (!introPlayed) { introPlayed = true; home.classList.add("intro"); setTimeout(() => home.classList.remove("intro"), 1000); }
-    home.innerHTML = mangaBox() + gameBox() + streamBox();
+    home.innerHTML = mangaBox() + gameBox() + streamBox() + pcBox();
     const b = loadJson("qg-backup", 0);
     const has = arr(loadJson("mtq-series", [])).length + arr(loadJson("qg-games", [])).length + arr(loadJson("qg-streams", [])).length > 0;
     const late = has && (!b || Date.now() - b > 30 * 86400000);
@@ -282,7 +307,7 @@
     refresh.classList.add("spin");
     try {
       if (online) {
-        const files = ["index.html", "mangatheque.html", "jeux.html", "streams.html", "app.js", "mangatheque.js", "jeux.js", "streams.js", "guard.js", "sync.js"];
+        const files = ["index.html", "mangatheque.html", "jeux.html", "streams.html", "pc.html", "app.js", "mangatheque.js", "jeux.js", "streams.js", "pc.js", "guard.js", "sync.js"];
         const reg = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration() : null;
         await Promise.race([
           Promise.all([reg ? reg.update().catch(() => {}) : null, ...files.map((f) => fetch(f, { cache: "reload" }).catch(() => {}))]),

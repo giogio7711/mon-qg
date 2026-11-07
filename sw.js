@@ -1,7 +1,8 @@
 // Mon QG : garde une copie des pages pour que l'appli s'ouvre même sans réseau.
 // Réseau d'abord (pour toujours avoir la dernière version), copie en secours.
-const CACHE = "mon-qg-v3";
-const SHELL = ["index.html", "mangatheque.html", "jeux.html", "streams.html", "app.js", "mangatheque.js", "jeux.js", "streams.js", "guard.js", "sync.js","manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png"];
+const CACHE = "mon-qg-v4";
+// La tour 3D (tour-3d*, 650 Ko) n'est pas mise de côté à l'installation : elle l'est à sa première ouverture
+const SHELL = ["index.html", "mangatheque.html", "jeux.html", "streams.html", "pc.html", "app.js", "mangatheque.js", "jeux.js", "streams.js", "pc.js", "guard.js", "sync.js","manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
