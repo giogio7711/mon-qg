@@ -162,6 +162,8 @@ kbd { font-family: var(--font-mono); font-size: 12px; border: 1px solid var(--be
   .addrow { width: 100%; }
   .addrow textarea { flex: 1; width: auto; }
 }
+/* Lien de partage (mode visite) : on regarde, on ne modifie pas */
+html.visite [data-act="fav"], html.visite [data-act="del"], html.visite #addForm, html.visite #importBox { display: none !important; }
 </style>
 </head>
 <body>

@@ -319,7 +319,8 @@
   function startLocal() {
     mode = "local";
     db = null;
-    canWrite = true;
+    // Lien de partage (mode visite) : on regarde, on ne modifie pas
+    canWrite = !document.documentElement.classList.contains("visite");
     readOnlyReason = "";
     loadLocal();
     loaded = true;
