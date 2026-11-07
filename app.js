@@ -273,7 +273,7 @@
     checkLive();
   });
 
-  if (online && "serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  if (online && "serviceWorker" in navigator) navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
 
   // Bouton « Actualiser » : recharge l'appli avec la dernière version publiée (utile dans l'appli installée, sans barre d'adresse)
   const refresh = document.getElementById("refreshBtn");
