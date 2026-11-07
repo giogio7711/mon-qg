@@ -208,10 +208,12 @@
       t.append(f);
     }
     t.hidden = false;
-    $("tourBtn").hidden = true;
-    t.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.body.classList.add("touring");
+    $("tourClose").focus();
   });
-  $("tourClose").addEventListener("click", () => { $("tour").hidden = true; $("tourBtn").hidden = false; });
+  const closeTour = () => { $("tour").hidden = true; document.body.classList.remove("touring"); $("tourBtn").focus(); };
+  $("tourClose").addEventListener("click", closeTour);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("tour").hidden) closeTour(); });
 
   window.addEventListener("storage", (e) => { if (e.key === KEY || e.key === null) { load(); render(); } });
   load();

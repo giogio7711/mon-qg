@@ -61,10 +61,10 @@ let shown=null,selected='gpu',hovered=null;
 ORDER.forEach(id=>{const p=PARTS[id],b=document.createElement('button');b.dataset.go=id;b.setAttribute('aria-pressed','false');b.innerHTML=`<i class="dot" style="background:${DOT[p.st]}"></i>${esc(p.cat)}`;plist.appendChild(b)});
 function show(id){
   if(id===shown) return; shown=id; const p=PARTS[id]; const [cls,lab]=STC[p.st];
-  pbody.innerHTML=`
+  pbody.innerHTML=`<div class="pc1">
    <div class="eyebrow"><span>${String(p.num).padStart(2,'0')} · ${esc(p.cat)}</span><span class="badge ${cls}">${esc(p.badge||lab)}</span></div>
    <div class="cur"><p class="cur-l">Composant actuel</p><h2>${esc(p.name)}</h2><p class="spec">${esc(p.spec)}</p></div>
-   ${p.note?`<p class="note">${esc(p.note)}</p>`:''}
+   ${p.note?`<p class="note">${esc(p.note)}</p>`:''}</div><div class="pc2">
    <h3>Améliorations possibles</h3>
    <ul class="ups">${p.ups.map(u=>`<li class="up${u.best?' best':''}${u.no?' no':''}">
       ${u.best?'<span class="tagbest">Conseillé</span>':''}
@@ -72,7 +72,7 @@ function show(id){
       <p>${esc(u.d)}</p>
       <div class="chips">${u.c.map(([t,x])=>`<span class="chip ${t}">${t==='y'?'✓':t==='n'?'✕':'!'} ${esc(x)}</span>`).join('')}</div>
       ${u.go?`<div><button class="golink" data-go="${u.go}">Voir ${esc(PARTS[u.go].cat)} →</button></div>`:''}
-   </li>`).join('')}</ul>`;
+   </li>`).join('')}</ul></div>`;
   plist.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.go===selected?'true':'false'));
 }
 document.addEventListener('click',e=>{const t=e.target.closest('[data-go]');if(t){select(t.dataset.go)}});
