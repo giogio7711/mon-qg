@@ -21,8 +21,12 @@
   $("today").textContent = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }).replace(/^./, (c) => c.toUpperCase());
 
   // ---- Onglets : chaque outil est chargé une fois puis gardé ouvert ----
+  // Mode visite (lien de partage) : seulement les onglets que le propriétaire a choisis
+  const view = window.qgView;
+  const allowed = (tab) => tab === "accueil" || (!!PAGES[tab] && (!view || view.tabs.includes(tab)));
+
   function show(tab) {
-    if (tab !== "accueil" && !PAGES[tab]) tab = "accueil";
+    if (!allowed(tab)) tab = "accueil";
     current = tab;
     for (const b of $("nav").querySelectorAll("button")) b.setAttribute("aria-current", b.dataset.tab === tab ? "page" : "false");
     $("accueil").hidden = tab !== "accueil";
@@ -159,7 +163,7 @@
   function renderHome() {
     const home = $("home");
     if (!introPlayed) { introPlayed = true; home.classList.add("intro"); setTimeout(() => home.classList.remove("intro"), 1000); }
-    home.innerHTML = mangaBox() + gameBox() + streamBox() + pcBox();
+    home.innerHTML = (allowed("mangas") ? mangaBox() : "") + (allowed("jeux") ? gameBox() : "") + (allowed("streams") ? streamBox() : "") + (allowed("pc") ? pcBox() : "");
     const b = loadJson("qg-backup", 0);
     const has = arr(loadJson("mtq-series", [])).length + arr(loadJson("qg-games", [])).length + arr(loadJson("qg-streams", [])).length > 0;
     const late = has && (!b || Date.now() - b > 30 * 86400000);
@@ -286,6 +290,46 @@
   document.addEventListener("click", (e) => { if (!$("userMenu").hidden && !e.target.closest("#userMenu")) $("userMenu").hidden = true; });
   $("logoutBtn").addEventListener("click", () => window.qgSync?.logout());
 
+  // ---- Partage en lecture seule ----
+  const sp = $("sharePanel");
+  const shareUrl = (id) => new URL("./?voir=" + id, location.href).href;
+  function shareRender() {
+    const s = window.qgSync?.share.get();
+    for (const c of sp.querySelectorAll("input[name=shareTab]")) c.checked = s ? s.tabs.includes(c.value) : ["jeux", "pc"].includes(c.value);
+    $("shareLinkRow").hidden = !s;
+    if (s) $("shareLink").value = shareUrl(s.id);
+    $("shareStop").hidden = $("shareNew").hidden = !s;
+    $("shareSave").textContent = s ? "Mettre à jour" : "Créer le lien";
+    $("shareErr").hidden = true;
+  }
+  function shareError(e) {
+    const denied = e && (e.code === "permission-denied" || /permission/i.test(e.message || ""));
+    $("shareErr").textContent = denied
+      ? "Firebase refuse le partage : ajoute d'abord les règles de partage dans la console Firebase (Firestore → Règles)."
+      : (e && e.message) || "Partage impossible pour l'instant. Réessaie.";
+    $("shareErr").hidden = false;
+  }
+  async function shareRun(btn, job, done) {
+    for (const b of sp.querySelectorAll(".acts .btn")) b.disabled = true;
+    const label = btn.textContent;
+    btn.textContent = "Un instant…";
+    try { await job(); shareRender(); if (done) toast(done); }
+    catch (e) { console.warn("Mon QG : partage", e); btn.textContent = label; shareError(e); }
+    finally { for (const b of sp.querySelectorAll(".acts .btn")) b.disabled = false; }
+  }
+  const pickedTabs = () => [...sp.querySelectorAll("input[name=shareTab]:checked")].map((c) => c.value);
+  $("shareBtn").addEventListener("click", () => { $("userMenu").hidden = true; shareRender(); sp.hidden = false; sp.querySelector("input").focus(); });
+  $("shareClose").addEventListener("click", () => (sp.hidden = true));
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !sp.hidden) sp.hidden = true; });
+  $("shareSave").addEventListener("click", (e) => shareRun(e.currentTarget, () => window.qgSync.share.save(pickedTabs(), false), "Lien de partage à jour"));
+  $("shareNew").addEventListener("click", (e) => shareRun(e.currentTarget, () => window.qgSync.share.save(pickedTabs(), true), "Nouveau lien créé : l'ancien ne marche plus"));
+  $("shareStop").addEventListener("click", (e) => shareRun(e.currentTarget, () => window.qgSync.share.stop(), "Partage arrêté : le lien ne marche plus"));
+  $("shareCopy").addEventListener("click", async () => {
+    const inp = $("shareLink");
+    try { await navigator.clipboard.writeText(inp.value); toast("Lien copié"); }
+    catch (e) { inp.select(); toast("Fais Ctrl+C pour copier le lien"); }
+  });
+
   // Un autre appareil a changé quelque chose : l'accueil se met à jour (les outils ouverts l'apprennent tout seuls)
   window.addEventListener("qg-remote", () => { if (current === "accueil") renderHome(); });
 
@@ -293,7 +337,23 @@
   const online = location.protocol === "https:" || location.protocol === "http:";
   const boot = online ? new Promise((resolve) => (window.qgBootDone = resolve)) : Promise.resolve();
   renderHome();
+
+  if (view) {
+    $("visitBar").hidden = false;
+    // Le partage n'a pas pu être ouvert (lien arrêté, réseau…) : on le dit dans le bandeau
+    window.qgViewFail = (msg) => {
+      $("visitBar").classList.add("bad");
+      $("visitTxt").textContent = msg;
+      if (!view.tabs.length) for (const b of $("nav").querySelectorAll("[data-tab]")) b.hidden = b.dataset.tab !== "accueil";
+    };
+  }
+
   boot.then(() => {
+    if (view) {
+      $("visitTxt").textContent = view.name ? `QG partagé par ${view.name}` : "QG partagé";
+      for (const b of $("nav").querySelectorAll("[data-tab]")) b.hidden = !allowed(b.dataset.tab);
+      document.title = view.name ? `Mon QG de ${view.name}` : "Mon QG partagé";
+    }
     show(location.hash.slice(1) || loadJson("qg-tab", "accueil"));
     checkLive();
   });
@@ -302,7 +362,7 @@
 
   // Bouton « Actualiser » : recharge l'appli avec la dernière version publiée (utile dans l'appli installée, sans barre d'adresse)
   const refresh = document.getElementById("refreshBtn");
-  const files = ["index.html", "mangatheque.html", "jeux.html", "streams.html", "pc.html", "app.js", "mangatheque.js", "jeux.js", "streams.js", "pc.js", "guard.js", "sync.js", "tour-3d.html", "tour-3d.js"];
+  const files = ["index.html", "mangatheque.html", "jeux.html", "streams.html", "pc.html", "app.js", "mangatheque.js", "jeux.js", "streams.js", "pc.js", "guard.js", "view.js", "sync.js", "tour-3d.html", "tour-3d.js"];
 
   // Détection d'une nouvelle version : GitHub met 1 à 2 min à publier après un envoi.
   // On demande juste l'en-tête des fichiers (léger) toutes les 45 s quand l'appli est visible, et dès qu'on y revient.

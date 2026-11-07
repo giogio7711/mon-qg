@@ -6,6 +6,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <script src="guard.js"></script>
+<script src="view.js"></script>
 <title>Mon QG</title>
 <meta name="theme-color" content="#07070b">
 <meta name="description" content="Mes mangas, mes jeux et mes streams, synchronisés entre mes appareils.">
@@ -162,6 +163,29 @@ nav button .dot { min-width: 20px; height: 20px; border-radius: 10px; background
 .login-box small { color: var(--muted); }
 .btn.big { padding: 12px 22px; font-size: 16px; }
 @media (max-width: 560px) { .sync { display: none; } .refresh { margin-left: auto; } }
+/* Partage en lecture seule */
+.share { position: fixed; z-index: 45; top: calc(var(--bar) + 8px); right: 16px; width: min(420px, calc(100% - 32px)); background: var(--panel2); border: 1px solid var(--cyan); border-radius: 16px;
+  padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 0 30px -8px var(--cyan); }
+.share h2 { margin: 0; font-family: var(--font-display); font-size: 18px; text-transform: uppercase; letter-spacing: .06em; }
+.share fieldset { border: 1px solid var(--line); border-radius: 12px; margin: 0; padding: 10px 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.share legend { padding: 0 6px; font-size: 12px; color: var(--muted); font-weight: 700; }
+.share label { display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; }
+.share input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--cyan); }
+.share .link { display: flex; gap: 8px; }
+.share .link input { flex: 1; min-width: 0; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font: 12.5px ui-monospace, Consolas, monospace; }
+.share .acts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.share .err { margin: 0; color: var(--stop); font-weight: 700; font-size: 13px; }
+.share .x { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+.share .x:hover { color: var(--text); border-color: var(--cyan); }
+/* Bandeau du mode visite : une ligne de hauteur fixe, retirée de la hauteur des onglets */
+html.visite { --visit: 36px; }
+html.visite .frame { height: calc(100vh - var(--bar) - var(--visit)); height: calc(100dvh - var(--bar) - var(--visit)); }
+.visit { height: var(--visit, 36px); overflow: hidden; background: linear-gradient(90deg, rgba(34, 211, 238, .16), rgba(163, 59, 255, .16)); border-bottom: 1px solid var(--line); font-size: 13.5px; font-weight: 700; }
+.visit .wrap { height: 100%; display: flex; gap: 12px; align-items: center; white-space: nowrap; overflow: hidden; }
+.visit small { color: var(--muted); font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 560px) { .visit small { display: none; } }
+.visit.bad { background: rgba(255, 77, 109, .14); color: var(--stop); }
+html.visite .backup, html.visite #userBtn, html.visite #userMenu, html.visite #sharePanel { display: none !important; }
 </style>
 </head>
 <body>
@@ -192,10 +216,33 @@ nav button .dot { min-width: 20px; height: 20px; border-radius: 10px; background
   </div>
 </div>
 
+<div class="visit" id="visitBar" hidden role="status"><div class="wrap"><span id="visitTxt">QG partagé</span><small>Lecture seule : tu peux tout regarder et cliquer, rien n'est enregistré.</small></div></div>
+
 <div class="menu" id="userMenu" hidden>
   <p id="userName"></p>
+  <button class="btn" id="shareBtn" type="button">Partager mon QG…</button>
   <button class="btn" id="logoutBtn" type="button">Se déconnecter</button>
   <small>Tes données restent dans ton compte et reviennent à la prochaine connexion.</small>
+</div>
+
+<div class="share" id="sharePanel" hidden role="dialog" aria-labelledby="shareTitle">
+  <button class="x" id="shareClose" type="button" aria-label="Fermer">✕</button>
+  <h2 id="shareTitle">Partager mon QG</h2>
+  <p class="muted">La personne qui a le lien voit les onglets cochés, en direct, sans se connecter. Elle peut tout regarder et cliquer, mais rien n'est modifié chez toi.</p>
+  <fieldset>
+    <legend>Onglets à montrer</legend>
+    <label><input type="checkbox" name="shareTab" value="mangas"> Mangas</label>
+    <label><input type="checkbox" name="shareTab" value="jeux"> Jeux</label>
+    <label><input type="checkbox" name="shareTab" value="streams"> Streams</label>
+    <label><input type="checkbox" name="shareTab" value="pc"> PC</label>
+  </fieldset>
+  <div class="link" id="shareLinkRow" hidden><input id="shareLink" readonly aria-label="Lien de partage"><button class="btn primary" id="shareCopy" type="button">Copier</button></div>
+  <p class="err" id="shareErr" hidden></p>
+  <div class="acts">
+    <button class="btn ghost" id="shareStop" type="button" hidden>Arrêter le partage</button>
+    <button class="btn ghost" id="shareNew" type="button" hidden title="L'ancien lien ne marchera plus">Nouveau lien</button>
+    <button class="btn primary" id="shareSave" type="button">Créer le lien</button>
+  </div>
 </div>
 
 <main id="accueil">

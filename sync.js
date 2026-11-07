@@ -5,7 +5,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signInWithRedirect, getRedirectResult, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, setDoc, collection, getDocs, onSnapshot }
+import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, getDocs, onSnapshot }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -54,6 +54,7 @@ async function push(key) {
   if (v && v.length > MAX) { console.warn("Mon QG : trop gros pour la synchro", key); return; }
   try {
     await setDoc(doc(db, "users", uid, "kv", key), { v: v ?? null, t: meta[key] || Date.now(), by: device });
+    pushShare(key, v);
     setStatus("Synchronisé");
   } catch (e) {
     console.warn("Mon QG : envoi impossible", key, e);
@@ -162,7 +163,100 @@ async function logout() {
   location.reload();
 }
 
-window.qgSync = { pushAll, changed, logout };
+/* ---------- Partage en lecture seule ----------
+   shares/{id}            : { owner, tabs, cles, name, t }  — lisible par qui a le lien (id de 32 caractères au hasard)
+   shares/{id}/kv/{clé}   : { v }                           — seulement les clés des onglets choisis
+   Le réglage (id + onglets) est dans la clé synchronisée « qg-share » : ton téléphone publie aussi ses changements. */
+const SHARE_KEYS = {
+  mangas: ["mtq-series", "mtq-releases", "mtq-news", "mtq-covers", "mtq-covers2"],
+  jeux: ["qg-games"],
+  streams: ["qg-streams", "qg-live"],
+  pc: ["qg-pc"]
+};
+const cleanTabs = (t) => (Array.isArray(t) ? Object.keys(SHARE_KEYS).filter((k) => t.includes(k)) : []);
+const keysFor = (tabs) => cleanTabs(tabs).flatMap((t) => SHARE_KEYS[t]);
+const shareCfg = () => { const s = read("qg-share", null); return s && /^[a-f0-9]{32}$/.test(s.id) && cleanTabs(s.tabs).length ? { id: s.id, tabs: cleanTabs(s.tabs) } : null; };
+let myName = "";
+
+async function pushShare(key, v) {
+  const s = shareCfg();
+  if (!uid || !s || !keysFor(s.tabs).includes(key) || (v && v.length > MAX)) return;
+  try { await setDoc(doc(db, "shares", s.id, "kv", key), { v: v ?? null }); }
+  catch (e) { console.warn("Mon QG : partage non mis à jour", key, e); }
+}
+
+function newId() {
+  const b = new Uint8Array(16);
+  crypto.getRandomValues(b);
+  return [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+
+async function shareSave(tabs, fresh) {
+  if (!uid) throw new Error("Connecte-toi d'abord");
+  tabs = cleanTabs(tabs);
+  if (!tabs.length) throw new Error("Coche au moins un onglet");
+  const old = shareCfg();
+  if (old && fresh) await shareStop();
+  const id = old && !fresh ? old.id : newId();
+  const cles = keysFor(tabs);
+  // Les clés retirées du partage sont effacées avant de mettre la liste à jour
+  if (old && !fresh) for (const k of keysFor(old.tabs)) if (!cles.includes(k)) await deleteDoc(doc(db, "shares", id, "kv", k)).catch(() => {});
+  await setDoc(doc(db, "shares", id), { owner: uid, tabs, cles, name: myName, t: Date.now() });
+  for (const k of cles) {
+    const v = localStorage.getItem(k);
+    if (v != null && v.length <= MAX) await setDoc(doc(db, "shares", id, "kv", k), { v });
+  }
+  localStorage.setItem("qg-share", JSON.stringify({ id, tabs }));
+  changed("qg-share");
+  return id;
+}
+
+async function shareStop() {
+  const s = shareCfg();
+  if (!uid || !s) return;
+  // D'abord les données (les règles vérifient le propriétaire sur la fiche du partage), puis la fiche
+  for (const k of Object.values(SHARE_KEYS).flat()) await deleteDoc(doc(db, "shares", s.id, "kv", k)).catch(() => {});
+  await deleteDoc(doc(db, "shares", s.id));
+  localStorage.removeItem("qg-share");
+  changed("qg-share");
+}
+
+window.qgSync = { pushAll, changed, logout, share: { get: shareCfg, save: shareSave, stop: shareStop } };
+
+/* ---------- Mode visite : on lit le partage, sans compte ---------- */
+async function startView(view) {
+  const fail = (msg) => { setStatus(msg, true); window.qgViewFail?.(msg); };
+  if (!view.ok) return fail("Ce navigateur ne permet pas d'ouvrir le partage");
+  setStatus("Chargement…");
+  let m;
+  try { m = await getDoc(doc(db, "shares", view.id)); }
+  catch (e) { console.warn("Mon QG : partage illisible", e); return fail("Partage inaccessible pour l'instant"); }
+  if (!m.exists()) return fail("Ce lien de partage n'existe plus");
+  const d = m.data() || {};
+  view.tabs = cleanTabs(d.tabs);
+  view.name = typeof d.name === "string" ? d.name.slice(0, 40) : "";
+  const cles = keysFor(view.tabs);
+  const ok = (v) => typeof v === "string" && v.length <= MAX;
+  await Promise.all(cles.map((k) => getDoc(doc(db, "shares", view.id, "kv", k))
+    .then((s) => { const v = s.data()?.v; if (ok(v)) view.fill(k, v, true); }).catch(() => {})));
+  setStatus("En direct");
+  window.qgBootDone?.();
+  // En direct : les changements du propriétaire arrivent tout seuls
+  for (const k of cles) {
+    onSnapshot(doc(db, "shares", view.id, "kv", k), (s) => {
+      const v = s.data()?.v;
+      if (ok(v) && v !== view.mem.getItem(k)) view.fill(k, v);
+    }, () => {});
+  }
+  onSnapshot(doc(db, "shares", view.id), (s) => {
+    if (!s.exists()) return fail("Le partage a été arrêté");
+    if (cleanTabs(s.data()?.tabs).join() !== view.tabs.join()) location.reload();   // onglets partagés changés
+  }, () => {});
+}
+
+const view = window.qgView;
+if (view) startView(view);
+else {
 $("loginBtn")?.addEventListener("click", login);
 
 getRedirectResult(auth).catch((e) => {
@@ -171,6 +265,7 @@ getRedirectResult(auth).catch((e) => {
 });
 
 onAuthStateChanged(auth, async (user) => {
+  if (user) myName = String(user.displayName || "").trim().split(/\s+/)[0].slice(0, 40);
   const gate = $("login");
   if (!user) { if (gate) gate.hidden = false; return; }
   if (gate) gate.hidden = true;
@@ -188,3 +283,4 @@ onAuthStateChanged(auth, async (user) => {
   await start(user);
   window.qgBootDone?.();
 });
+}
