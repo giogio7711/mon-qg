@@ -51,7 +51,24 @@
     return g.status === filter;
   }
 
+  // Filtre par plateforme (PC, PS5, PS4…) : compteurs, onglets et liste ne montrent que celle-ci
+  let platF = "all";
+  try { platF = localStorage.getItem("qg-games-plat") || "all"; } catch (e) {}
+  const platOf = (g) => g.platform || "PC";
+  const pool = () => platF === "all" ? items : items.filter((g) => platOf(g) === platF);
+
+  function renderPlat() {
+    const counts = new Map();
+    for (const g of items) counts.set(platOf(g), (counts.get(platOf(g)) || 0) + 1);
+    if (platF !== "all" && !counts.has(platF)) platF = "all";
+    const plats = [...PLATFORMS.filter((p) => counts.has(p)), ...[...counts.keys()].filter((p) => !PLATFORMS.includes(p))];
+    $("platSel").innerHTML = `<option value="all">Toutes les plateformes (${items.length})</option>`
+      + plats.map((p) => `<option value="${esc(p)}">${esc(p)} (${counts.get(p)})</option>`).join("");
+    $("platSel").value = platF;
+  }
+
   function renderStats() {
+    const items = pool();
     const playing = items.filter((g) => g.status === "playing").length;
     const backlog = items.filter((g) => g.status === "backlog").length;
     const finished = items.filter((g) => g.status === "done" || g.status === "platinum").length;
@@ -65,6 +82,7 @@
   }
 
   function renderTabs() {
+    const items = pool();
     const entries = [["all", "Tous", items.length], ...Object.entries(STATUSES).map(([k, v]) => [k, v, items.filter((g) => g.status === k).length])];
     if (filter === "finished") entries.push(["finished", "Finis + platinés", items.filter(matches).length]);
     if (EXTRA[filter]) entries.push([filter, EXTRA[filter], items.filter(matches).length]);
@@ -99,9 +117,10 @@
   }
 
   function render() {
+    renderPlat();
     renderStats();
     renderTabs();
-    let shown = items.filter(matches);
+    let shown = pool().filter(matches);
     const q = query.trim().toLowerCase();
     if (q) shown = shown.filter((g) => String(g.title).toLowerCase().includes(q) || String(g.note || "").toLowerCase().includes(q));
     shown.sort((a, b) => {
@@ -269,6 +288,7 @@
   $("stats").addEventListener("click", (e) => { const b = e.target.closest("[data-filter]"); if (b) setFilter(filter === b.dataset.filter ? "all" : b.dataset.filter); });
   $("tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-filter]"); if (b) setFilter(b.dataset.filter); });
   $("search").addEventListener("input", (e) => { query = e.target.value; render(); });
+  $("platSel").addEventListener("change", (e) => { platF = e.target.value; try { localStorage.setItem("qg-games-plat", platF); } catch (err) {} render(); });
   $("sort").addEventListener("change", (e) => { sort = e.target.value; try { localStorage.setItem("qg-games-sort", sort); } catch (err) {} render(); });
 
   // Une sauvegarde restaurée depuis le tableau de bord : on relit la liste
