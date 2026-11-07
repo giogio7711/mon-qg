@@ -258,8 +258,11 @@
   });
 
   $("grid").addEventListener("error", (e) => {
-    // Image cassée : on remet le point d'interrogation
-    if (e.target.tagName === "IMG") e.target.replaceWith(Object.assign(document.createElement("span"), { textContent: "？" }));
+    // Image cassée : jaquette Steam verticale absente → bannière Steam ; sinon on remet le point d'interrogation
+    if (e.target.tagName !== "IMG") return;
+    const src = e.target.getAttribute("src") || "";
+    if (/steamstatic\.com\/steam\/apps\/\d+\/library_600x900\.jpg$/.test(src)) { e.target.src = src.replace("library_600x900.jpg", "header.jpg"); return; }
+    e.target.replaceWith(Object.assign(document.createElement("span"), { textContent: "？" }));
   }, true);
 
   const setFilter = (f) => { filter = f; try { localStorage.setItem("qg-games-filter", f); } catch (e) {} render(); };
@@ -272,12 +275,150 @@
   window.addEventListener("storage", (e) => { if (e.key === KEY || e.key === null) { load(); render(); } });
 
   // Jaquettes manquantes (jeux ajoutés sans réseau, sauvegarde restaurée…) : une seule tentative par jeu
+  let filling = false;
   async function fillCovers() {
-    for (const g of items.filter((x) => !x.cover && !x.coverTried)) {
-      const u = await findCover(g.title);
-      if (items.some((x) => x.id === g.id)) update(g.id, u ? { cover: u } : { coverTried: true });
-    }
+    if (filling) return;
+    filling = true;
+    try {
+      for (let g; (g = items.find((x) => !x.cover && !x.coverTried)); ) {
+        const u = await findCover(g.title);
+        if (items.some((x) => x.id === g.id)) update(g.id, u ? { cover: u } : { coverTried: true });
+      }
+    } finally { filling = false; }
   }
+
+  // ---- Import de toute une bibliothèque (Steam, PlayStation) ou d'une liste de titres ----
+  for (const p of PLATFORMS) $("importPlat").insertAdjacentHTML("beforeend", `<option>${p}</option>`);
+  for (const [k, v] of Object.entries(STATUSES)) $("importStatus").insertAdjacentHTML("beforeend", `<option value="${k}">${v}</option>`);
+  $("importStatus").value = "backlog";
+  $("importOpen").addEventListener("click", () => { $("importBox").open = true; $("importBox").scrollIntoView({ behavior: "smooth", block: "start" }); });
+
+  const cleanTitle = (t) => String(t || "").replace(/[™®©]/g, "").replace(/\s+/g, " ").trim().slice(0, 140);
+  const keyOf = (t) => cleanTitle(t).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "");
+
+  function parseImport(raw, plat) {
+    // Ce que copie le favori : « QG-JEUX:[{t: titre, p: plateforme, h: heures, c: jaquette}, …] »
+    const m = raw.match(/QG-JEUX:(\[[\s\S]*\])/);
+    if (m) {
+      try {
+        const list = JSON.parse(m[1]);
+        if (Array.isArray(list)) return list.filter((g) => g && typeof g.t === "string").map((g) => ({
+          title: cleanTitle(g.t), platform: PLATFORMS.includes(g.p) ? g.p : plat,
+          hours: Math.max(0, Math.round((num(g.h) ?? 0) * 10) / 10), cover: safeUrl(String(g.c || ""))
+        }));
+      } catch (e) { /* pas lisible : on le traite comme une liste */ }
+    }
+    // Une liste tapée ou collée : un titre par ligne (puces et numéros retirés)
+    return raw.split(/\r?\n/).map((l) => cleanTitle(l.replace(/^\s*(?:[-*•·]|\d+[.)])\s+/, "")))
+      .filter((t) => t && /[a-z0-9]/i.test(t)).map((title) => ({ title, platform: plat, hours: 0, cover: "" }));
+  }
+
+  $("importBtn").addEventListener("click", () => {
+    const raw = $("importText").value;
+    const list = parseImport(raw, $("importPlat").value);
+    if (!list.length) { toast("Colle d'abord ta liste de jeux"); return; }
+    const status = $("importStatus").value;
+    const byKey = new Map(items.map((g) => [keyOf(g.title) + "|" + g.platform, g]));
+    let added = 0, updated = 0;
+    const fresh = [];
+    for (const g of list) {
+      const k = keyOf(g.title) + "|" + g.platform;
+      if (!keyOf(g.title)) continue;
+      const old = byKey.get(k);
+      if (old) {
+        const patch = {};
+        if (g.hours > (num(old.hours) ?? 0)) patch.hours = g.hours;
+        if (!old.cover && g.cover) patch.cover = g.cover;
+        if (Object.keys(patch).length) { Object.assign(old, patch); updated++; }
+        continue;
+      }
+      const item = { id: "g" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), title: g.title, platform: g.platform, status,
+        hours: g.hours, rating: null, cover: g.cover, note: "", updatedAt: null };
+      byKey.set(k, item);
+      fresh.push(item);
+      added++;
+    }
+    items = [...items.map((g) => ({ ...g })), ...fresh];
+    save();
+    render();
+    $("importText").value = "";
+    $("importBox").open = false;
+    toast(added || updated ? `${added} jeu${added > 1 ? "x" : ""} ajouté${added > 1 ? "s" : ""}${updated ? ` · ${updated} mis à jour` : ""}` : "Tous ces jeux sont déjà là");
+    fillCovers();   // jaquettes manquantes cherchées sur Wikipédia, une à une
+  });
+
+  // Le favori : lit ta bibliothèque Steam ou PlayStation et copie la liste (titres, heures, jaquettes).
+  // Ce code est mis sur une seule ligne : jamais de commentaire « // » à l'intérieur.
+  const BOOKMARKLET = `(async () => {
+    const host = location.hostname;
+    const steam = /(^|\\.)steamcommunity\\.com$/.test(host), ps = /(^|\\.)playstation\\.com$/.test(host);
+    if (!steam && !ps) { alert("Ouvre d'abord ta liste de jeux Steam (steamcommunity.com) ou ta bibliothèque PlayStation (library.playstation.com), connecté à ton compte, puis reclique sur ce favori."); return; }
+    if (steam && !/\\/games/.test(location.pathname)) { alert("Je t'ouvre ta liste de jeux Steam. Quand elle est chargée, reclique sur ce favori."); location.href = "https://steamcommunity.com/my/games/?tab=all"; return; }
+    if (ps && host !== "library.playstation.com") { alert("Je t'ouvre ta bibliothèque PlayStation. Quand elle est chargée, reclique sur ce favori."); location.href = "https://library.playstation.com/recently-purchased"; return; }
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    const games = new Map();
+    const add = (t, p, h, c) => {
+      t = String(t || "").replace(/\\s+/g, " ").trim();
+      if (!t || t.length > 140 || /^(playstation|ps plus|image|avatar)$/i.test(t)) return;
+      const k = t.toLowerCase() + "|" + p, o = games.get(k);
+      if (!o) games.set(k, { t, p, h: h || 0, c: c || "" });
+      else { if ((h || 0) > o.h) o.h = h; if (!o.c && c) o.c = c; }
+    };
+    const box = document.createElement("div");
+    box.style.cssText = "position:fixed;z-index:999999;top:16px;right:16px;background:#000;color:#f3e600;border:2px solid #00f0ff;padding:10px 14px;font:600 14px monospace";
+    document.body.append(box);
+    const show = (m) => (box.textContent = "Mon QG : " + games.size + " jeux trouvés… " + (m || ""));
+    const steamCover = (id) => "https://cdn.cloudflare.steamstatic.com/steam/apps/" + id + "/library_600x900.jpg";
+    let list = null;
+    if (steam) {
+      const tpl = document.querySelector("[data-profile-gameslist]");
+      if (tpl) { try { list = JSON.parse(tpl.getAttribute("data-profile-gameslist")).rgGames; } catch (e) {} }
+      if (!list && Array.isArray(window.rgGames)) list = window.rgGames;
+      if (list) for (const g of list) add(g.name, "PC", Math.round((g.playtime_forever || 0) / 6) / 10, g.appid ? steamCover(g.appid) : "");
+    }
+    if (!list) {
+      const collect = () => {
+        if (steam) {
+          for (const a of document.querySelectorAll("a[href*='/app/']")) {
+            const id = (a.href.match(/\\/app\\/(\\d+)/) || [])[1], t = a.textContent.trim();
+            if (id && t && t.length > 1) add(t, "PC", 0, steamCover(id));
+          }
+          return;
+        }
+        for (const img of document.images) {
+          if (!/playstation\\.(com|net)/.test(img.currentSrc || img.src) || img.getBoundingClientRect().width < 60) continue;
+          const tile = img.closest("a, li, [role=listitem], [data-qa]") || img.parentElement;
+          const text = [...tile.querySelectorAll("*")].filter((el) => !el.children.length).map((el) => el.textContent.replace(/\\s+/g, " ").trim()).filter(Boolean);
+          const t = img.alt && img.alt.trim().length > 1 ? img.alt : text.find((s) => s.length > 1 && !/^(PS[45]|PS VR2?|Jeu|Game|Acheté|Purchased|Gratuit|Free|Télécharger|Download|Installé|Installed|PS Plus|\\d+ ?%)$/i.test(s));
+          add(t, text.includes("PS4") && !text.includes("PS5") ? "PS4" : "PS5", 0, img.currentSrc || img.src);
+        }
+      };
+      for (let pageNo = 1; pageNo <= 60; pageNo++) {
+        let still = 0, last = -1;
+        for (let i = 0; i < 120 && still < 6; i++) {
+          collect(); show("(page " + pageNo + ", défilement…)");
+          window.scrollTo(0, document.documentElement.scrollHeight);
+          await wait(600);
+          if (games.size === last) still++; else { still = 0; last = games.size; }
+        }
+        const next = [...document.querySelectorAll("button, a")].find((b) => /suivant|next/i.test((b.getAttribute("aria-label") || "") + " " + (b.getAttribute("data-qa") || "") + " " + b.textContent.trim()) && !b.disabled && b.getAttribute("aria-disabled") !== "true" && b.offsetParent);
+        if (!next) break;
+        const before = games.size;
+        next.click();
+        await wait(2500);
+        collect();
+        if (games.size === before) { await wait(2000); collect(); if (games.size === before) break; }
+      }
+    }
+    box.remove();
+    const all = [...games.values()];
+    if (!all.length) { alert("Aucun jeu trouvé sur cette page. Vérifie que tu es connecté et que ta liste de jeux est affichée."); return; }
+    const text = "QG-JEUX:" + JSON.stringify(all);
+    try { await navigator.clipboard.writeText(text); alert(all.length + " jeux copiés ! Reviens sur Mon QG, colle-les (Ctrl+V) dans le cadre d'import, puis « Importer »."); }
+    catch (e) { prompt(all.length + " jeux trouvés. Copie ce texte (Ctrl+C) puis colle-le dans Mon QG :", text); }
+  })();`;
+  $("bookmarklet").href = "javascript:" + encodeURIComponent(BOOKMARKLET.replace(/\s*\n\s*/g, " "));
+  $("bookmarklet").addEventListener("click", (e) => { e.preventDefault(); toast("Glisse ce bouton dans ta barre de favoris"); });
 
   load();
   render();

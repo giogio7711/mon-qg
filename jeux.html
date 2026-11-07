@@ -143,6 +143,27 @@ select option { background: var(--panel); }
 .preview .box { width: 54px; flex: none; }
 .panel-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; align-items: center; }
 .panel-actions .spacer { flex: 1; }
+/* Import de bibliothèque */
+.cta { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.cover .cta .btn.ghost { border-color: var(--y-ink); color: var(--y-ink); justify-content: center; }
+.cover .cta .btn.ghost:hover { background: rgba(0, 0, 0, .12); }
+.import { margin-top: 20px; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--cyan); }
+.import summary { cursor: pointer; padding: 12px 16px; font-family: var(--font-display); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--cyan); }
+.import summary span { color: var(--muted); font-size: 12px; margin-left: 8px; letter-spacing: .1em; }
+.import .in { padding: 0 16px 16px; display: grid; gap: 14px; }
+.srcs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.src { border: 1px dashed var(--line); padding: 10px 14px; min-width: 0; }
+.src h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 14px; text-transform: uppercase; letter-spacing: .08em; color: var(--y); }
+.src p, .src ol { margin: 0 0 6px; font-size: 14.5px; }
+.src ol { padding-left: 20px; }
+.src a:not(.btn) { color: var(--cyan); }
+.import textarea { width: 100%; min-height: 96px; resize: vertical; border: 1px solid var(--line); background: var(--bg); padding: 8px 10px; border-radius: 0; }
+.import textarea:focus { border-color: var(--y); }
+.go { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.go label { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+.go select { border: 1px solid var(--line); background: var(--bg); padding: 6px 8px; border-radius: 0; font-family: var(--font-body); font-size: 14px; text-transform: none; letter-spacing: 0; color: var(--text); }
+.go .spacer { flex: 1; }
+.import .hint { margin: 0; color: var(--muted); font-size: 13px; }
 .err { color: var(--stop); font-size: 14px; font-weight: 700; margin: 10px 0 0; }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 22px; z-index: 30; background: var(--y); color: var(--y-ink); font-family: var(--font-display); font-weight: 700;
   text-transform: uppercase; letter-spacing: .06em; padding: 8px 20px; font-size: 13px; max-width: calc(100% - 32px);
@@ -162,7 +183,7 @@ select option { background: var(--panel); }
 }
 @media (max-width: 720px) {
   .cover { grid-template-columns: auto minmax(0, 1fr); padding: 18px 20px; }
-  .cover .btn.big { grid-column: 1 / -1; justify-self: start; }
+  .cover .cta { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; }
   .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grid { grid-template-columns: 1fr; }
   .finders { width: 100%; }
@@ -179,11 +200,54 @@ select option { background: var(--panel); }
       <h1>Mes <em>Jeux</em></h1>
       <div class="bubble">Tes jeux PC et PS5 : en cours, à faire, finis et platinés.</div>
     </div>
-    <button class="btn primary big" id="addBtn" type="button">+ Ajouter un jeu</button>
+    <div class="cta">
+      <button class="btn primary big" id="addBtn" type="button">+ Ajouter un jeu</button>
+      <button class="btn ghost" id="importOpen" type="button">⇩ Importer ma bibliothèque</button>
+    </div>
   </div>
 </header>
 
 <main class="wrap">
+  <details class="import" id="importBox">
+    <summary>⇩ Importer toute ma bibliothèque d'un coup <span>Steam · PlayStation · Epic et autres</span></summary>
+    <div class="in">
+      <div class="srcs">
+        <div class="src">
+          <h3>1 · Le favori magique (une seule fois)</h3>
+          <p>Glisse ce bouton dans ta barre de favoris (Ctrl+Maj+B pour l'afficher) :</p>
+          <p><a class="btn primary" id="bookmarklet" href="#" draggable="true">🎮 QG · Mes jeux</a></p>
+        </div>
+        <div class="src">
+          <h3>Steam (PC)</h3>
+          <ol>
+            <li>Ouvre <a href="https://steamcommunity.com/my/games/?tab=all" target="_blank" rel="noopener noreferrer">ta liste de jeux Steam</a>, connecté à ton compte.</li>
+            <li>Clique sur le favori <b>🎮 QG · Mes jeux</b> : tous tes jeux sont copiés, avec tes heures de jeu et les jaquettes.</li>
+            <li>Reviens ici, colle (Ctrl+V) dans le cadre ci-dessous, puis <b>Importer</b>.</li>
+          </ol>
+        </div>
+        <div class="src">
+          <h3>PS5 / PlayStation</h3>
+          <ol>
+            <li>Ouvre <a href="https://library.playstation.com/recently-purchased" target="_blank" rel="noopener noreferrer">ta bibliothèque PlayStation</a>, connecté à ton compte.</li>
+            <li>Clique sur le favori <b>🎮 QG · Mes jeux</b> et laisse-le défiler : il parcourt toutes les pages.</li>
+            <li>Colle ici, puis <b>Importer</b>.</li>
+          </ol>
+        </div>
+        <div class="src">
+          <h3>Epic, Ubisoft, EA, Battle.net…</h3>
+          <p>Ces launchers ne donnent pas de liste à copier. Écris ou colle tes titres <b>un par ligne</b>, choisis la plateforme : les jaquettes sont trouvées toutes seules.</p>
+        </div>
+      </div>
+      <textarea id="importText" placeholder="Colle ici ce que le favori a copié, ou une liste de titres (un par ligne)" aria-label="Jeux à importer"></textarea>
+      <div class="go">
+        <label>Plateforme (pour une liste) <select id="importPlat"></select></label>
+        <label>Statut des jeux ajoutés <select id="importStatus"></select></label>
+        <span class="spacer"></span>
+        <button class="btn primary" id="importBtn" type="button">Importer</button>
+      </div>
+      <p class="hint">Déjà dans ta liste ? Le jeu n'est pas ajouté deux fois : ses heures sont juste mises à jour. Tu peux donc refaire l'import Steam quand tu veux.</p>
+    </div>
+  </details>
   <section class="stats" id="stats" aria-label="Résumé"></section>
   <div class="toolbar">
     <div class="tabs" id="tabs" role="group" aria-label="Filtrer"></div>
