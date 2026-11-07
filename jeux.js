@@ -308,9 +308,56 @@
         }));
       } catch (e) { /* pas lisible : on le traite comme une liste */ }
     }
+    // Toute la page « Tous les jeux » de Steam copiée (Ctrl+A, Ctrl+C) : titres et temps de jeu
+    if (STEAM_PAGE.test(raw)) { const list = parseSteamPage(raw); if (list.length) return list; }
     // Une liste tapée ou collée : un titre par ligne (puces et numéros retirés)
     return raw.split(/\r?\n/).map((l) => cleanTitle(l.replace(/^\s*(?:[-*•·]|\d+[.)])\s+/, "")))
-      .filter((t) => t && /[a-z0-9]/i.test(t)).map((title) => ({ title, platform: plat, hours: 0, cover: "" }));
+      .filter((t) => t && /[a-z0-9]/i.test(t) && !LABEL.test(t) && !TIME.test(t)).map((title) => ({ title, platform: plat, hours: 0, cover: "" }));
+  }
+
+  const STEAM_PAGE = /temps de jeu total|total played|mes stats de jeu|my game stats|mon contenu de jeu/i;
+  // Boutons affichés sous chaque jeu : ils ferment le bloc d'un jeu
+  const BLOCK_END = /^(mes stats de jeu|mon contenu de jeu|my game stats|my game content|stats de jeu|contenu de jeu)$/i;
+  // Intitulés et textes de la page qui ne sont pas des jeux
+  const LABEL = /^(temps de jeu total|total played|temps de jeu|playtime|dernier lancement|last played|succès|achievements|progression des succès|page du magasin|store page|en savoir plus|learn more|nom|name|trier par|aucun temps de jeu|jamais joué|never played|•+|…|\.\.\.)$/i;
+  const TIME = /^(?:\d[\d\s  .,]*\s*(?:heures?|h|hrs?|hours?|minutes?|min)|\d+\s*\/\s*\d+|\d{1,2}\s+\S+\.?\s+\d{4}|aujourd'hui|hier|today|yesterday)$/i;
+
+  function hoursOf(text) {
+    const m = text.match(/(\d[\d\s  .,]*?)\s*(heures?|h|hrs?|hours?)(?![a-z])/i);
+    if (m) {
+      let s = m[1].replace(/[\s  ]/g, "");
+      s = /,\d{1,2}$/.test(s) ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+      const v = parseFloat(s);
+      if (isFinite(v)) return Math.round(v * 10) / 10;
+    }
+    const mm = text.match(/(\d+)\s*min/i);
+    return mm ? Math.round(+mm[1] / 6) / 10 : 0;
+  }
+
+  function parseSteamPage(raw) {
+    const lines = raw.split(/\r?\n/).map((l) => l.replace(/[\s  ]+/g, " ").trim()).filter(Boolean);
+    const out = [];
+    let block = [];
+    const flush = () => {
+      if (!block.length) return;
+      // Le titre : la ligne juste avant les intitulés (temps de jeu, dernier lancement…), sinon la dernière ligne du bloc
+      const first = block.findIndex((l) => /^(temps de jeu total|total played|dernier lancement|last played|succès|achievements)\b/i.test(l));
+      const before = (first >= 0 ? block.slice(0, first) : block).filter((l) => !LABEL.test(l) && !TIME.test(l));
+      const title = cleanTitle(before[before.length - 1] || "");
+      if (title && title.length > 1) {
+        const after = first >= 0 ? block.slice(first).join("\n") : "";
+        const at = after.search(/temps de jeu total|total played/i);
+        out.push({ title, platform: "PC", hours: at >= 0 ? hoursOf(after.slice(at)) : 0, cover: "" });
+      }
+      block = [];
+    };
+    for (const l of lines) {
+      if (BLOCK_END.test(l)) { if (block.length) flush(); continue; }
+      block.push(l);
+    }
+    // Le bas de la page (sans boutons de jeu) ne compte que s'il contient un temps de jeu
+    if (block.some((l) => /^(temps de jeu total|total played)\b/i.test(l))) flush();
+    return out;
   }
 
   $("importBtn").addEventListener("click", () => {
