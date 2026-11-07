@@ -302,12 +302,40 @@
 
   // Bouton « Actualiser » : recharge l'appli avec la dernière version publiée (utile dans l'appli installée, sans barre d'adresse)
   const refresh = document.getElementById("refreshBtn");
+  const files = ["index.html", "mangatheque.html", "jeux.html", "streams.html", "pc.html", "app.js", "mangatheque.js", "jeux.js", "streams.js", "pc.js", "guard.js", "sync.js", "tour-3d.html", "tour-3d.js"];
+
+  // Détection d'une nouvelle version : GitHub met 1 à 2 min à publier après un envoi.
+  // On demande juste l'en-tête des fichiers (léger) toutes les 45 s quand l'appli est visible, et dès qu'on y revient.
+  let firstSeen = null, announced = false;
+  async function versionTag() {
+    const tags = await Promise.all(files.map((f) => fetch(f, { method: "HEAD", cache: "no-store" })
+      .then((r) => r.ok ? (r.headers.get("etag") || r.headers.get("last-modified") || r.headers.get("content-length") || "") : "")
+      .catch(() => null)));
+    return tags.includes(null) ? null : tags.join("|");   // hors ligne : on ne conclut rien
+  }
+  async function checkVersion() {
+    if (!online || announced || document.hidden) return;
+    const tag = await versionTag();
+    if (tag === null) return;
+    if (firstSeen === null) { firstSeen = tag; return; }
+    if (tag !== firstSeen && refresh) {
+      announced = true;
+      refresh.classList.add("fresh");
+      refresh.title = "Nouvelle version en ligne : clique pour l'installer";
+      toast("Nouvelle version de Mon QG en ligne : clique sur ⟳");
+    }
+  }
+  if (online) {
+    checkVersion();
+    setInterval(checkVersion, 45000);
+    document.addEventListener("visibilitychange", checkVersion);
+  }
+
   if (refresh) refresh.addEventListener("click", async () => {
     if (refresh.classList.contains("spin")) return;
     refresh.classList.add("spin");
     try {
       if (online) {
-        const files = ["index.html", "mangatheque.html", "jeux.html", "streams.html", "pc.html", "app.js", "mangatheque.js", "jeux.js", "streams.js", "pc.js", "guard.js", "sync.js", "tour-3d.html", "tour-3d.js"];
         const reg = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration() : null;
         await Promise.race([
           Promise.all([reg ? reg.update().catch(() => {}) : null, ...files.map((f) => fetch(f, { cache: "reload" }).catch(() => {}))]),
