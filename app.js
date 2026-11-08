@@ -366,19 +366,38 @@
 
   // Détection d'une nouvelle version : GitHub met 1 à 2 min à publier après un envoi.
   // On demande juste l'en-tête des fichiers (léger) toutes les 45 s quand l'appli est visible, et dès qu'on y revient.
-  let firstSeen = null, announced = false;
-  async function versionTag() {
+  // GitHub change l'étiquette (ETag) de TOUS les fichiers à chaque envoi, même ceux qui n'ont pas bougé :
+  // quand une étiquette change, on compare donc le contenu réel avec la copie gardée par l'appli.
+  let seen = null, announced = false, busy = false;
+  async function versionTags() {
     const tags = await Promise.all(files.map((f) => fetch(f, { method: "HEAD", cache: "no-store" })
       .then((r) => r.ok ? (r.headers.get("etag") || r.headers.get("last-modified") || r.headers.get("content-length") || "") : "")
       .catch(() => null)));
-    return tags.includes(null) ? null : tags.join("|");   // hors ligne : on ne conclut rien
+    return tags.includes(null) ? null : tags;   // hors ligne : on ne conclut rien
+  }
+  async function reallyChanged(f) {
+    if (!("caches" in window)) return true;
+    // index.html peut être gardé sous « index.html » ou sous l'adresse du dossier (« ./ »)
+    const olds = (await Promise.all((f === "index.html" ? [f, "./"] : [f]).map((u) => caches.match(u, { ignoreSearch: true }).catch(() => null)))).filter(Boolean);
+    if (!olds.length) return false;               // jamais ouvert ici : il sera chargé à jour de toute façon
+    const texts = await Promise.all(olds.map((r) => r.text()));
+    const now = await fetch(f, { cache: "no-store" }).then((r) => r.ok ? r.text() : null);
+    return now !== null && !texts.includes(now);
   }
   async function checkVersion() {
-    if (!online || announced || document.hidden) return;
-    const tag = await versionTag();
-    if (tag === null) return;
-    if (firstSeen === null) { firstSeen = tag; return; }
-    if (tag !== firstSeen && refresh) {
+    if (!online || announced || busy || document.hidden) return;
+    busy = true;
+    try {
+      const tags = await versionTags();
+      if (tags === null) return;
+      if (seen === null) { seen = tags; return; }
+      let changed = false;
+      for (let i = 0; i < files.length && !changed; i++) {
+        if (tags[i] !== seen[i]) changed = await reallyChanged(files[i]);
+      }
+      if (!changed) { seen = tags; return; }
+    } catch { return; } finally { busy = false; }
+    if (refresh) {
       announced = true;
       refresh.classList.add("fresh");
       refresh.title = "Nouvelle version en ligne : clique pour l'installer";
